@@ -1,0 +1,1 @@
+BIN\\TRXCOM /R /B:9600 /P:26 A.EXE

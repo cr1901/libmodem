@@ -1,0 +1,39 @@
+#Top level Makefile for PICTOR library. Run this makefile directly.
+#Edit other either LIBSRC Makefile or COMMON.MAK as needed.
+
+TOPLEVEL=1
+!INCLUDE COMMON.MAK
+
+all: .symbolic
+	cd $(SRCDIR) & nmake $(NMAKEFL9AGS) all
+#	cd $(EXAMPLEDIR) & nmake $(NMAKEFLAGS) all
+#	cd $(EDDIR) & nmake $(NMAKEFLAGS) all
+#	cd $(HELPDIR) & nmake $(NMAKEFLAGS) all
+#	cd $(UTILDIR) & nmake $(NMAKEFLAGS) all
+	
+clean: .symbolic
+	cd $(SRCDIR) & nmake $(NMAKEFLAGS) clean
+#	cd $(EXAMPLEDIR) & nmake $(NMAKEFLAGS) clean
+#	cd $(EDDIR) & nmake $(NMAKEFLAGS) clean
+#	cd $(HELPDIR) & nmake $(NMAKEFLAGS) clean
+#	cd $(UTILDIR) & nmake $(NMAKEFLAGS) clean
+	
+install: .symbolic
+	cd $(SRCDIR) & nmake $(NMAKEFLAGS) install
+#	cd $(EXAMPLEDIR) & nmake $(NMAKEFLAGS) install
+#	cd $(EDDIR) & nmake $(NMAKEFLAGS) install
+#	cd $(HELPDIR) & nmake $(NMAKEFLAGS) install
+#	cd $(UTILDIR) & nmake $(NMAKEFLAGS) install
+	#cd $(EDDIR) & nmake clean
+	
+redo: .symbolic
+	cd $(SRCDIR) & nmake $(NMAKEFLAGS) -S redo
+#	cd $(EXAMPLEDIR) & nmake $(NMAKEFLAGS) -S redo
+#	cd $(EDDIR) & nmake $(NMAKEFLAGS) -S redo
+#	cd $(HELPDIR) & nmake $(NMAKEFLAGS) -S redo
+#	cd $(UTILDIR) & nmake $(NMAKEFLAGS) -S redo
+	
+uninstall: .symbolic
+	del *.h *.lib
+	#Add *.help
+	del $(BINDIR)\*.exe
