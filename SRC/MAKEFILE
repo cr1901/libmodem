@@ -1,0 +1,19 @@
+OBJS=trxcom.obj xmodem.obj usr_def.obj
+EXES=trxcom.exe
+
+#TOPLEVEL=1
+!INCLUDE "..\COMMON.MAK"
+
+#LIBRARIES=PICTORSW.LIB
+
+.asm.obj:
+	$(AS) $(AFLAGS) $*.asm
+#	$(LIB) $(LIBNAME) +$*
+
+.c.obj:
+	$(CC) $(CFLAGS) $*.c -o $*.obj
+#	$(LIB) $(LIBNAME) +$*
+
+#Watcom Linker specific.
+trxcom.exe: $(OBJS)
+	$(LINKER) $(LFLAGS) -o trxcom.exe $(OBJS)
