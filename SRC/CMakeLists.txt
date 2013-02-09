@@ -1,0 +1,1 @@
+add_executable(TRXCOM XMODEM.C TRXCOM.C USR_DEF.C )
