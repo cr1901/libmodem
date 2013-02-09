@@ -161,7 +161,8 @@ uint16_t serial_flush(serial_handle_t port_addr)
 
 
 /** Begin Windows defines... **/
-#elif defined __WIN32__
+/* See USR_DEF.H for the reasoning of each macro. */
+#elif defined(__WIN32__) || defined(_WIN32) || defined(WIN32) || defined(__NT__)
 /* Serial routines ripped from:
  * http://www.robbayer.com/files/serial-win.pdf
  * without whose permission this was made possible :)...

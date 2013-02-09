@@ -12,7 +12,8 @@
 
 #ifdef __DOS__
 	#define SERIAL_HANDLE void *
-#elif defined(__WIN32__)
+	/* GNU, Microsoft's requirement, CMake Watcom, and Watcom defined-macros respectively. */
+#elif defined(__WIN32__) || defined(_WIN32) || defined(WIN32) || defined(__NT__)
 	#include <windows.h>
 	#define SERIAL_HANDLE HANDLE
 #elif defined(__VIC20__)
