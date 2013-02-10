@@ -350,6 +350,8 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 				//printf("Timeout occurred.\n");
 				serial_snd(&tx_code, 1, serial_device);
 			}
+			
+			printf("Character received while waiting: %c\n", rx_buffer[0]);
 			//printf("Status inside initial loop: %X\n", status);
 		}while((rx_buffer[0] != expected_start_char_1 \
 			&& rx_buffer[0] != expected_start_char_2) \

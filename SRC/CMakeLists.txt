@@ -1,4 +1,4 @@
-set(SRCS XMODEM.C TRXCOM.C USR_DEF.C)
+set(SRCS XMODEM.c TRXCOM.c USR_DEF.c)
 add_executable(TRXCOM  ${SRCS})
 
 #CMake thinks these are CXX files for some reason
