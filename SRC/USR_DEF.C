@@ -78,7 +78,7 @@ uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port
 	}
 	
 	
-	if(!comopen(comlib_pn, comlib_br, CO_NOPARITY, 8, CO_STOP1, CO_IRQDEFAULT))
+	if(!comopen(comlib_pn, comlib_br, CO_NOPARITY, CO_DATA8, CO_STOP1, CO_IRQDEFAULT))
 	{
 		/* Note to self: Make sure near/far are distinguished. */
 		
@@ -400,7 +400,7 @@ uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port
 	}
 	
 	
-	if(!comopen(comlib_pn, comlib_br, CO_NOPARITY, 8, CO_STOP1, CO_IRQDEFAULT))
+	if(!comopen(comlib_pn, comlib_br, CO_NOPARITY, CO_DATA8, CO_STOP1, CO_IRQDEFAULT))
 	{
 		/* Note to self: Make sure near/far are distinguished. */
 		

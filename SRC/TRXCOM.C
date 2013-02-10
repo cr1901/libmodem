@@ -182,7 +182,7 @@ int main(int argc, char * argv[])
 void print_banner(void)
 {
 	printf("TRXCOM- Transit and Receive files via COM ports\n");
-	printf("Copyright 2012 William D. Jones\n");
+	printf("Copyright 2013 William D. Jones\n");
 }
 
 //Implement redirection to stdout (look up redirection in C).
