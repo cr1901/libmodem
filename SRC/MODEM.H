@@ -67,6 +67,21 @@
  * ZMODEM transmission prematurely. */
 #define ZDLE CAN
 
+/** Constants which define offsets into TXRX buffer. **/
+/* Indices to an array which point to locations within a packet.
+ * Pointer arithmetic between offsets gets the number of octets (bytes)
+ * to read or write for a given operation. */
+typedef enum offset_names
+{
+	START_CHAR = 0,
+	BLOCK_NO,
+	COMP_BLOCK_NO,
+	DATA,
+	CHKSUM_CRC,
+	END
+}OFFSET_NAMES;
+
+
 
 /** RX/TX input flags. **/
 #define XMODEM 0x00
@@ -142,6 +157,9 @@
 
 uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
+/* xmodem_tx, xmodem_rx, xmodem_crc_tx, etc... or
+return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards 
+xmodem_tx, xmodem_rx, ymodem_tx, ymodem_rx, etc... */
 
 
 //uint16_t send_data(XMODEM_1K_PACKET * tx_packet, uint16_t (*tx_routine) (uint8_t * data, uint16_t num_bytes, uint8_t port_no));
@@ -176,13 +194,9 @@ uint16_t generate_crc(uint8_t * data, uint16_t size);
 #endif
 
 #ifndef USING_DIFFTIME
-	#ifdef NO_FLOAT
-		extern int modem_difftime(time_t time_2, time_t time_1);
-	#else
-		extern float modem_difftime(time_t time_2, time_t time_1);
-	#endif
+	extern int modem_difftime(time_t time_2, time_t time_1);
 #else
-	#define modem_difftime(_x, _y) difftime(_x, _y)
+	#define modem_difftime(_x, _y) (uint16_t) difftime(_x, _y)
 #endif
 
 /* If using asynchronous I/O (interrupt-driven), use an idle function to

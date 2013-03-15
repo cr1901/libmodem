@@ -1,0 +1,5 @@
+if(WIN32)
+	#include_directories(${CMAKE_SOURCE_DIR}/src)
+	set(SRCS trxdlg.rc trxwin.c)
+	add_executable(TRXWIN WIN32 ${SRCS})
+endif(WIN32)

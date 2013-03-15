@@ -1,0 +1,2 @@
+Import('env')
+env.Program(['TRXCOM.c', 'USR_DEF.c', 'XMODEM.c'])

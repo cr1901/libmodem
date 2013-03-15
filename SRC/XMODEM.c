@@ -5,22 +5,11 @@
 #include <stdint.h>
 #include <time.h>
 
-/* Indices to an array which point to locations within a packet.
- * Pointer arithmetic between offsets gets the number of octets (bytes)
- * to read or write for a given operation. */
-typedef enum offset_names
-{
-	START_CHAR = 0,
-	BLOCK_NO,
-	COMP_BLOCK_NO,
-	DATA,
-	CHKSUM_CRC,
-	END
-}OFFSET_NAMES;
 
 
 static void set_packet_offsets(OFFSET_NAMES names, uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode);
 static void purge(serial_handle_t serial_device);
+static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
 //static void assemble_packet(XMODEM_OFFSETS * offsets, )
 //static void disassemble_packet()
 
@@ -53,12 +42,11 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			crc16 = 0, num_1k_xfer_failures = 0;
 	
 	/* Logic variables. */
-	uint8_t eof_detected = MODEM_FALSE, expected_rx_detected = MODEM_FALSE, \
+	uint8_t eof_detected = MODEM_FALSE, \
 			using_128_blocks_in_1k = MODEM_FALSE;
 	
 	/* Check to see if EOF was reached using bytes_read */
 	size_t bytes_read;
-	time_t start,end;
 	
 	/* This function combines all X/Y modem functionality... any
 	 * protocol-specific statements are marked in if-else
@@ -67,39 +55,6 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	/* Flush the buffer in case some characters were remaining
 	 * to prevent glitches. */ 
 	serial_flush(serial_device);
-	
-	/* Wait for NAK or 'C', timeout after 1 minute. */
-	time(&start);
-	while(status != TIMEOUT && !(expected_rx_detected))
-	{	
-		time(&end);
-		elapsed_time = (uint16_t) modem_difftime(end, start);	
-		status = serial_rcv(&rx_code, 1, 60 - elapsed_time, serial_device);
-		//printf("Char detected:\t%X\n", rx_code);
-		
-
-		/* What happens if error on setting timeouts? */
-		if(status == TIMEOUT || status == SERIAL_ERROR)
-		{
-			return status;
-		}
-		/* ASCII_C is only correct for XMODEM_1K and XMODEM_CRC. */
-		else if((flags == XMODEM_1K || flags == XMODEM_CRC) && rx_code == ASCII_C)
-		{
-			expected_rx_detected = MODEM_TRUE;
-		}
-		/* Else, wait for NAK. */
-		else if((flags == XMODEM) && rx_code == NAK)
-		{
-			expected_rx_detected = MODEM_TRUE;
-		}
-		else
-		{
-			/* Do nothing. */
-		}
-	}
-	
-
 	
 	
 	/* Depending on mode set, set offsets. */	
@@ -150,7 +105,9 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		 
 		/* If less than 1024 bytes left in XMODEM_1K, switch to
 		 * an 128 byte to reduce overhead. */
-		if((flags == XMODEM_1K) && (bytes_written < offsets[CHKSUM_CRC] - offsets[DATA]) && !using_128_blocks_in_1k)
+		if((flags == XMODEM_1K) && \
+		(bytes_written < offsets[CHKSUM_CRC] - offsets[DATA]) && \
+		!using_128_blocks_in_1k)
 		{
 			/* Does not alter flags byte to distinguish XMODEM_CRC
 			 * and XMODEM_1K with 128-byte packets. */
@@ -351,7 +308,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 				serial_snd(&tx_code, 1, serial_device);
 			}
 			
-			printf("Character received while waiting: %c\n", rx_buffer[0]);
+			//printf("Character received while waiting: %c\n", rx_buffer[0]);
 			//printf("Status inside initial loop: %X\n", status);
 		}while((rx_buffer[0] != expected_start_char_1 \
 			&& rx_buffer[0] != expected_start_char_2) \
@@ -383,8 +340,8 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			}
 			 
 			count = 1; /* First character must be preserved because all
-						* offsets have been set. If not preserved,
-						* all data is shifted to by one element downward. */
+				* offsets have been set. If not preserved,
+				* all data is shifted to by one element downward. */
 			do{
 				status = serial_rcv(rx_buffer + count, 1, 1, serial_device);
 				count++;
@@ -516,7 +473,8 @@ uint16_t generate_crc(uint8_t * data, uint16_t size)
 
 
 /** Static functions. **/
-static void set_packet_offsets(OFFSET_NAMES names, uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode)
+static void set_packet_offsets(OFFSET_NAMES names, uint8_t ** packet_offsets, \
+	uint8_t * packet, uint8_t mode)
 {
 	packet_offsets[START_CHAR] = packet;
 	packet_offsets[BLOCK_NO] = packet + 1;
@@ -555,4 +513,41 @@ static void purge(serial_handle_t serial_dev)
 	do{
 		timeout_status = serial_rcv(&dummy_byte, 1, 1, serial_dev);
 	}while(timeout_status != TIMEOUT);
+}
+
+static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags)
+{
+	time_t start,end;
+	uint16_t elapsed_time;
+	uint16_t status = NO_ERRORS;
+	uint8_t expected_rx_detected = MODEM_FALSE;
+	uint8_t rx_code = NUL;
+	
+	/* Wait for NAK or 'C', timeout after 1 minute. */
+	time(&start);
+	while(!(expected_rx_detected))
+	{	
+		time(&end);
+		elapsed_time = modem_difftime(end, start);	
+		status = serial_rcv(&rx_code, 1, 60 - elapsed_time, serial_device);
+		//printf("Char detected:\t%X\n", rx_code);
+		
+
+		/* What happens if error on setting timeouts? */
+		if(status == TIMEOUT || status == SERIAL_ERROR)
+		{
+			break;
+		}
+		/* ASCII_C is only correct for XMODEM_1K and XMODEM_CRC. */
+		else if((flags == XMODEM_1K || flags == XMODEM_CRC) && rx_code == ASCII_C)
+		{
+			expected_rx_detected = MODEM_TRUE;
+		}
+		/* Else, wait for NAK. */
+		else if((flags == XMODEM) && rx_code == NAK)
+		{
+			expected_rx_detected = MODEM_TRUE;
+		}
+	}
+	return status;
 }

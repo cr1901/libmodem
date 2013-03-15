@@ -1,0 +1,9 @@
+#File used from template:
+#http://www.scons.org/wiki/ModularExample
+
+EnsurePythonVersion(2, 5)
+
+SConscript(['TARGETS/SConscript'])
+SConscript(['SRC/SConscript'])
+#SConscript(['SRC/GUI/SConscript'])
+

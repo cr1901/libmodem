@@ -1,0 +1,5 @@
+#Get settings.py values to determine the target. Use platform as well
+
+env = Environment(tools = ['default', 'dos'], toolpath = ['.'])
+print "CC is:", env.subst('$CC')
+Export('env')
