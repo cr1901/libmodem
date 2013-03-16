@@ -128,9 +128,9 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			if(modem_feof(f_ptr))
 			{
 				eof_detected = MODEM_TRUE;
-				for(count = 0; count < ((offsets[CHKSUM_CRC] - offsets[DATA]) - bytes_written); count++)
+				for(count = 0; count < ((offsets[CHKSUM_CRC] - offsets[DATA]) - bytes_read); count++)
 				{
-					*(offsets[DATA] + bytes_written + count) = CPMEOF;
+					*(offsets[DATA] + bytes_read + count) = CPMEOF;
 				}
 			}
 			else
