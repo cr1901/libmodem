@@ -99,7 +99,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			using_128_blocks_in_1k = MODEM_FALSE;
 		} */
 		
-		bytes_read = modem_fread(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), f_ptr);	
+		bytes_read = modem_fread(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), f_ptr);
 		 
 		/* If less than 1024 bytes left in XMODEM_1K, switch to
 		 * an 128 byte to reduce overhead. */
@@ -107,16 +107,21 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		!using_128_blocks_in_1k && \
 		(bytes_read < offsets[CHKSUM_CRC] - offsets[DATA]))
 		{
+			/* Todo: Add logic to check is feof encountered.- W. Jones */
+			
 			/* Does not alter flags byte to distinguish XMODEM_CRC
 			 * and XMODEM_1K with 128-byte packets. */
 			set_packet_offsets(names, offsets, tx_buffer, XMODEM_CRC);
 			*offsets[START_CHAR] = SOH;
 			using_128_blocks_in_1k = MODEM_TRUE;
 			
-			/* feof needs to be cleared, and the
-			remaining data obtained again. current_offset
-			will point to this location on the next loop. */
-			modem_fseek(f_ptr, current_offset + 128);
+			/* If 128 bytes or more remain, feof() needs to be cleared, 
+			and the file pointer reposition. current_offset
+			will point to this same location on the next loop iteration. */
+			if(bytes_read >= 128)
+			{
+				modem_fseek(f_ptr, current_offset + 128);
+			}
 		}
 		
 		/* If not all bytes were READ from file for current packet, 
@@ -135,7 +140,6 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			}
 			else
 			{
-				//printf("File read error.\n");
 				return FILE_ERROR;
 			}
 		}
@@ -198,7 +202,10 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 				current_offset += (offsets[CHKSUM_CRC] - offsets[DATA]);
 			}
 			#ifdef DISPLAY_MESSAGES
-				printf("%d bytes sent...\r", current_offset);
+				printf("%lu bytes sent...\r", current_offset);
+				/* This will display the buffer each line, instead
+				of each block. */
+				fflush(stdout);
 			#endif	
 		}while(!(rx_code == ACK || rx_code == NAK));
 	}while(!eof_detected);
@@ -428,7 +435,10 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 					return UNDEFINED_ERROR;
 			}
 			#ifdef DISPLAY_MESSAGES
-				printf("%d bytes received...\r", current_offset);
+				printf("%lu bytes received...\r", current_offset);
+				/* This will display the buffer each line, instead
+				of each block. */
+				fflush(stdout);
 			#endif	
 			tx_code = NAK; /* Make sure the receiver is ready to send
 							* NAK in case of timeout after looping. */

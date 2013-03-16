@@ -132,50 +132,59 @@ int main(int argc, char * argv[])
 		}	
 	}
 	
-	serial_init(port_no, baud_rate, &com_port);
-	
-	
-	/* DOS support broken... trashes serial registers...
-	while(test < 'F')
+	if(serial_init(port_no, baud_rate, &com_port) == SERIAL_ERROR)
 	{
-		computc(test);
-		sleep(1);
-		test++;
-	}
-	
-	return 0;	*/
-	
-	if(rx_mode == TRUE)
-	{
-		trx_file = modem_fopen_write(filename);
-		if(trx_file != NULL)
-		{
-			status = modem_rx(trx_file, com_port, txrx_flags);
-			printf("Returned status code: %X", status);
-		}
-		else
-		{
-			printf("Error: %s cannot be written.", filename);
-			return EXIT_FAILURE;
-		}
+		printf("Error initializing serial port- aborting.\n");
 	}
 	else
-	{
-		trx_file = modem_fopen_read(filename);
-		if(trx_file != NULL)
+	{	
+		/* DOS support broken... trashes serial registers...
+		while(test < 'F')
 		{
-			status = modem_tx(trx_file, com_port, txrx_flags);
-			printf("Returned status code: %X", status);
+			computc(test);
+			sleep(1);
+			test++;
+		}
+		
+		return 0;	*/
+		
+		if(rx_mode == TRUE)
+		{
+			trx_file = modem_fopen_write(filename);
+			if(trx_file != NULL)
+			{
+				status = modem_rx(trx_file, com_port, txrx_flags);
+				printf("Returned status code: %X", status);
+			}
+			else
+			{
+				printf("Error: %s cannot be written.", filename);
+				return EXIT_FAILURE;
+			}
 		}
 		else
 		{
-			printf("Error: %s not found.", filename);
-			return EXIT_FAILURE;
+			trx_file = modem_fopen_read(filename);
+			if(trx_file != NULL)
+			{
+				status = modem_tx(trx_file, com_port, txrx_flags);
+				printf("Returned status code: %X", status);
+			}
+			else
+			{
+				printf("Error: %s not found.", filename);
+				return EXIT_FAILURE;
+			}
 		}
+		modem_fclose(trx_file);
 	}
-	modem_fclose(trx_file);
-	serial_close(&com_port);
-	return status;
+	
+	if(serial_close(&com_port) != NO_ERRORS)
+	{
+		printf("\nError closing serial port!");
+		return EXIT_FAILURE;
+	}
+	return EXIT_SUCCESS;
 }
 
 
@@ -188,19 +197,24 @@ void print_banner(void)
 //Implement redirection to stdout (look up redirection in C).
 void print_usage(void)
 {
-	printf("Usage: TRXCOM [[/T | /R] [/S]] [[/X [/CRC] | /Y [/G]] [/1K [/F]]]\n");
-	printf("  [/B:b] [/P:n] FILENAME[...]\n");
-	printf("  /T\tTransmit file(s) to external equipment (default).\n");
-	printf("  /R\tReceive file(s) from external equipment.\n");
-	printf("  /S\tRedirect transmission to/from device.\n");
-	printf("  /X\tXMODEM: Use classic XMODEM protocol (default).\n");
-	printf("  /Y\tYMODEM: Use YMODEM protocol.\n");
-	printf("  /CRC\tXMODEM-CRC: Use CRC-16 check for XMODEM, fall back to checksum after\n\t3 failed retries.\n");
-	printf("  /1K\tX/YMODEM-1K: Use 1K packets for XMODEM-CRC/YMODEM. Implies '/X /CRC'\n\tif used with '/X' alone. '/G' option is ignored if used with '/Y /G'.\n");
-	printf("  /F\tX/YMODEM-1K => XMODEM-CRC/YMODEM: Fall back to 128 byte packets after\n\t3 failed retries (possibly non-standard).\n");
-	printf("  /G\tUse YMODEM-G protocol.\n");
-	printf("  /B:b\tBaud Rate (must be supported by both sender and receiver). Default\n\t9600 baud.\n");
-	printf("  /P:n\tCOM port number (between 1 and 4 for DOS).\n");
+	printf("Usage: TRXCOM [[/T | /R] [/S]] [[/X [/CRC] | /Y [/G]] [/1K [/F]]]\n"
+	"  [/B:b] [/P:n] FILENAME[...]\n"
+	"  /T\tTransmit file(s) to external equipment (default).\n"
+	"  /R\tReceive file(s) from external equipment.\n"
+	"  /S\tRedirect transmission to/from device.\n"
+	"  /X\tXMODEM: Use classic XMODEM protocol (default).\n"
+	"  /Y\tYMODEM: Use YMODEM protocol.\n"
+	"  /CRC\tXMODEM-CRC: Use CRC-16 check for XMODEM, fall back to checksum "
+		"after\n\t3 failed retries.\n"
+	"  /1K\tX/YMODEM-1K: Use 1K packets for XMODEM-CRC/YMODEM. Implies "
+		"'/X /CRC'\n\tif used with '/X' alone. '/G' option is ignored "
+		"if used with '/Y /G'.\n"
+	"  /F\tX/YMODEM-1K => XMODEM-CRC/YMODEM: Fall back to 128 byte packets "
+		"after\n\t3 failed retries (possibly non-standard).\n"
+	"  /G\tUse YMODEM-G protocol.\n"
+	"  /B:b\tBaud Rate (must be supported by both sender and receiver). "
+		"Default\n\t9600 baud.\n"
+	"  /P:n\tCOM port number (between 1 and 4 for DOS).\n");
 }
 
 /* int16_t byte_swap(int16_t x)

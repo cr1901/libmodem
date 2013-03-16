@@ -20,7 +20,7 @@
 #include <dos.h>
 #include <comlib.h>
 
-/* Switch EXIT_SUCCESS to NO_ERRORS at some point. */
+/* Switch EXIT_SUCCESS to NO_ERRORS at some point.- Done.- W. Jones */
 uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr)
 {
 	uint16_t comlib_br, comlib_pn;
@@ -86,7 +86,7 @@ uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port
 		* Note that a pointer to the address of the serial port is passed
 		* because the pointer to the serial port itself may be (in this
 		* case, is) a void pointer (which cannot dereferenced). */
-		return EXIT_SUCCESS;
+		return NO_ERRORS;
 	}
 	else
 	{
@@ -103,7 +103,7 @@ extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, /* uint8_t timeou
 	//comsettimeout((int) (timeout * 18));
 	if(!comwrite((char *) data, (int) num_bytes))
 	{
-		return EXIT_SUCCESS;
+		return NO_ERRORS;
 	}
 	else
 	{
@@ -119,13 +119,14 @@ extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, 
 	comsettimeout((int) (timeout * 18));
 	if(!comread((char *) data, (int) num_bytes))
 	{
-		return EXIT_SUCCESS;
+		comsettimeout(prev_timeout);
+		return NO_ERRORS;
 	}
 	else
 	{
+		comsettimeout(prev_timeout);
 		return TIMEOUT;
 	}
-	comsettimeout(prev_timeout);
 }
 
 uint16_t serial_close(serial_handle_t * port_addr)
@@ -133,7 +134,7 @@ uint16_t serial_close(serial_handle_t * port_addr)
 	if(!comclose())
 	{
 		(* port_addr) = NULL;
-		return EXIT_SUCCESS;
+		return NO_ERRORS;
 	}
 	else
 	{
