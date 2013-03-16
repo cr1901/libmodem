@@ -26,4 +26,9 @@
 /* Define if debug functionality is desired. */
 #define DEBUG
 
+/* Define if messages detailing current transfer should be print.
+This is a temporary feature until logic for the code to yield 
+(via cooperative-multitasking) is supported. */
+#define DISPLAY_MESSAGES
+
 #endif

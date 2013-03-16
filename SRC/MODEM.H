@@ -119,6 +119,8 @@ typedef enum offset_names
  * However, if a function is capable of timing out (rcv), return 
  * TIMEOUT on error. */
 #define SERIAL_ERROR BIT(6)
+
+/* May not be useful... */
 #define ASYNC_XFER_INCOMPLETE BIT(5)
 
 /* Critical Errors */

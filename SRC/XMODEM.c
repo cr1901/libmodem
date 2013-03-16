@@ -5,8 +5,6 @@
 #include <stdint.h>
 #include <time.h>
 
-
-
 static void set_packet_offsets(OFFSET_NAMES names, uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode);
 static void purge(serial_handle_t serial_device);
 static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
@@ -106,14 +104,19 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		/* If less than 1024 bytes left in XMODEM_1K, switch to
 		 * an 128 byte to reduce overhead. */
 		if((flags == XMODEM_1K) && \
-		(bytes_written < offsets[CHKSUM_CRC] - offsets[DATA]) && \
-		!using_128_blocks_in_1k)
+		!using_128_blocks_in_1k && \
+		(bytes_read < offsets[CHKSUM_CRC] - offsets[DATA]))
 		{
 			/* Does not alter flags byte to distinguish XMODEM_CRC
 			 * and XMODEM_1K with 128-byte packets. */
 			set_packet_offsets(names, offsets, tx_buffer, XMODEM_CRC);
 			*offsets[START_CHAR] = SOH;
 			using_128_blocks_in_1k = MODEM_TRUE;
+			
+			/* feof needs to be cleared, and the
+			remaining data obtained again. current_offset
+			will point to this location on the next loop. */
+			modem_fseek(f_ptr, current_offset + 128);
 		}
 		
 		/* If not all bytes were READ from file for current packet, 
@@ -147,11 +150,13 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		{
 			case XMODEM:
 			/* Typecasting needed? */
-				*offsets[CHKSUM_CRC] = generate_chksum(offsets[DATA], (uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
+				*offsets[CHKSUM_CRC] = generate_chksum(offsets[DATA], \
+					(uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
 				break;
 			/* All other protocols use CRC. */	
 			default:
-				crc16 = generate_crc(offsets[DATA], (uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
+				crc16 = generate_crc(offsets[DATA], \
+					(uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
 				#ifdef LITTLE_ENDIAN
 					/* Recall that CRC is 2 bytes, and so it needs to
 					 * be stored in the array of bytes. */
@@ -190,8 +195,11 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			{
 				/* Increment the block number and negate the complement block number in one line. */
 				(* offsets[COMP_BLOCK_NO]) = ~(++(* offsets[BLOCK_NO]));
-				current_offset += (offsets[END] - offsets[START_CHAR]);
+				current_offset += (offsets[CHKSUM_CRC] - offsets[DATA]);
 			}
+			#ifdef DISPLAY_MESSAGES
+				printf("%d bytes sent...\r", current_offset);
+			#endif	
 		}while(!(rx_code == ACK || rx_code == NAK));
 	}while(!eof_detected);
 	
@@ -406,7 +414,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 					}
 					else
 					{
-						current_offset += (offsets[END] - offsets[START_CHAR]);
+						current_offset += (offsets[CHKSUM_CRC] - offsets[DATA]);
 						error_count = -1; 
 						/* Reset error count if entire packet successfully
 						 * sent (all errors retried 10 times). */
@@ -419,6 +427,9 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 					serial_snd(&tx_code, 1, serial_device);
 					return UNDEFINED_ERROR;
 			}
+			#ifdef DISPLAY_MESSAGES
+				printf("%d bytes received...\r", current_offset);
+			#endif	
 			tx_code = NAK; /* Make sure the receiver is ready to send
 							* NAK in case of timeout after looping. */
 		} /* End if(!eot_detected) */
