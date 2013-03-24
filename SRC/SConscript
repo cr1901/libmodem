@@ -1,2 +1,40 @@
+#SRC SConscript (Base Executable)
+
 Import('env')
-env.Program(['TRXCOM.c', 'USR_DEF.c', 'XMODEM.c'])
+
+#If external libraries are required for the base-executable, check for them now.
+if 'dos' in env['TOOLS']:
+	env.Append(CPPPATH = ['#/../PICTOR'])
+	env.Append(LIBPATH = ['#/../PICTOR'])
+	libname = 'PICTOR' + env['MEMMODEL'] + 'W'
+	
+	if not env.GetOption('clean'):
+		conf = Configure(env)
+		
+		#According to SCons manual, files are relative to top level directory
+		#for builders...
+		#if not conf.CheckLibWithHeader('../PICTOR/' + libname, '../PICTOR/COMLIB.H', 'c'):
+		
+		#Treat library not found warnings as errors
+		#oldflags = env['LINKFLAGS']
+		#env.Append(LINKFLAGS=' -we')
+		if not conf.CheckLibWithHeader(libname, 'COMLIB.H', 'c'):
+			print "PICTOR Library required for DOS target! "
+			"Install in the same directory where the top level "
+			"of this source tree resides."
+			Exit(1)
+		else:
+			#And relative for other actions
+			#env.Append(CPPPATH = ['#/../PICTOR'])
+			#env.Append(LIBPATH = ['#/../PICTOR'])
+			
+			#Restore original flags
+			#env['LINKFLAGS'] = oldflags
+			env = conf.Finish()
+			
+	
+#print env.Dump('LINKCOM')
+core_src_files = Split('TRXCOM.c USR_DEF.c XMODEM.c')
+env.Program('TRXCOM', core_src_files)
+
+#Now build the platform-dependent files (if any)...

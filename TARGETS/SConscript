@@ -1,5 +1,9 @@
-#Get settings.py values to determine the target. Use platform as well
+#TARGETS SConscript
+#Get settings.py values to determine the target. Use platform as well.
 
+import os
+Import('default_env')
+#env = Environment(tools = ['mingw'], toolpath = ['.'])
+#env = default_env.Clone(tools = ['mingw'], toolpath = ['.'])
 env = Environment(tools = ['default', 'dos'], toolpath = ['.'])
-print "CC is:", env.subst('$CC')
 Export('env')

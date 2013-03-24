@@ -295,6 +295,8 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	serial_snd(&tx_code, 1, serial_device);
 	
 	do{
+		/* wait_for_tx_response() 
+		add difftime to calculate timeout. */
 		rx_buffer[0] = NUL;
 		/* Wait for first character. */
 		
@@ -304,6 +306,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			{
 				tx_code = CAN;
 				serial_snd(&tx_code, 1, serial_device);
+				/* return SERIAL_ERROR if 11 errors occurred */
 				return TIMEOUT;
 			}
 			
@@ -323,8 +326,8 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 				serial_snd(&tx_code, 1, serial_device);
 			}
 			
-			//printf("Character received while waiting: %c\n", rx_buffer[0]);
-			//printf("Status inside initial loop: %X\n", status);
+			printf("Character received while waiting: %c\n", rx_buffer[0]);
+			printf("Status inside initial loop: %X\n", status);
 		}while((rx_buffer[0] != expected_start_char_1 \
 			&& rx_buffer[0] != expected_start_char_2) \
 			&& rx_buffer[0] != EOT);
@@ -375,6 +378,9 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			else if((*offsets[COMP_BLOCK_NO] != expected_comp_block_no) && \
 				(*offsets[BLOCK_NO] != expected_block_no))
 			{
+				/* Look up YMODEM.txt to determine how the receiver
+				handles receiving the previous packet again. */
+				
 				//printf("Packet Mismatch\n", chksum);
 				status = PACKET_MISMATCH;
 			}

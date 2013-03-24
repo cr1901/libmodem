@@ -28,7 +28,7 @@
 
 /* Define if messages detailing current transfer should be print.
 This is a temporary feature until logic for the code to yield 
-(via cooperative-multitasking) is supported. */
+(via cooperative-multitasking or faking it) is supported. */
 #define DISPLAY_MESSAGES
 
 #endif

@@ -4,11 +4,6 @@
 #include <string.h>
 #include "modem.h"
 
-#ifdef __DOS__
-	#include <comlib.h>
-	#include <dos.h>
-#endif
-
 #define EVER ;;
 #define TRUE 1
 #define FALSE 0

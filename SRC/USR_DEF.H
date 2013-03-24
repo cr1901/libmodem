@@ -8,9 +8,9 @@
 /** Abstraction layer **/
 /* Each system to which this library is ported should have a
  * nonconflicting macro specifying the system. This macro can either
- * be internal to the compiler or a command line define. */
+ * be internal to the compiler or a command line define (though I suggest the former). */
 
-#ifdef __DOS__
+#ifdef __DOS__ /* This is a WATCOM-specific macro. */
 	#define SERIAL_HANDLE void *
 	/* GNU, Microsoft's requirement, CMake Watcom, and Watcom defined-macros respectively. */
 #elif defined(__WIN32__) || defined(_WIN32) || defined(WIN32) || defined(__NT__)
