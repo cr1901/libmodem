@@ -1,0 +1,12 @@
+#BUILD = 
+#TOOLCHAIN = WATCOM #MINGW, CL, WATCOM, CC65, GCC
+#TARGET = WIN32 #WIN32, WIN16, DOS, UNIX, VIC20, OS/2
+DEBUG_MESSAGES = True
+BUILD_TYPE = Release
+#GUI = True
+
+#HOST_INSTALL_DIR=C:\W2CUTILS
+#XFER= TRXCOM
+#XFER_FLAGS= /T /X /CRC /1K /B:19200 /P:4
+
+#Combine Toolchain and Target to determine all valid combinations.
