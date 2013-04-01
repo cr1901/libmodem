@@ -21,8 +21,6 @@
 #endif
 
 
-
-
 /** Library typedefs affected by platform specific defines. **/
 /* I do not suggest modifying the below typedefs, unless absolutely
  * necessary. However, the below code shows which macros need to be
@@ -53,7 +51,6 @@
  * case it is safe to set it to the peripheral's memory-mapped or
  * port-mapped address. NULL is reserved for failure. */
 typedef SERIAL_HANDLE serial_handle_t;
-
 
 
 #endif

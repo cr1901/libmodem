@@ -19,6 +19,7 @@
 #ifdef __DOS__
 #include <dos.h>
 #include <comlib.h>
+#include <stdio.h>
 
 /* Switch EXIT_SUCCESS to NO_ERRORS at some point.- Done.- W. Jones */
 uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr)
@@ -206,6 +207,8 @@ uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port
 	/* Using real values instead of CBR_BAUD_RATE for simplicity.
 	* Allowed according to MSDN:
 	* http://msdn.microsoft.com/en-us/library/windows/desktop/aa363214(v=vs.85).aspx */
+	printf("Baud rate: %lu\n", baud_rate);
+	
 	dcbSerialParams.BaudRate=baud_rate;
 	dcbSerialParams.ByteSize=8;
 	dcbSerialParams.StopBits=ONESTOPBIT;

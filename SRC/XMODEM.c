@@ -326,7 +326,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 				serial_snd(&tx_code, 1, serial_device);
 			}
 			
-			printf("Character received while waiting: %c\n", rx_buffer[0]);
+			printf("Character received while waiting: %X\n", rx_buffer[0]);
 			printf("Status inside initial loop: %X\n", status);
 		}while((rx_buffer[0] != expected_start_char_1 \
 			&& rx_buffer[0] != expected_start_char_2) \
@@ -375,8 +375,10 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			}			
 				/* If expected block numbers weren't received (either current or
 				 * previous packet number) synchronicity was lost- unrecoverable. */
-			else if((*offsets[COMP_BLOCK_NO] != expected_comp_block_no) && \
-				(*offsets[BLOCK_NO] != expected_block_no))
+			else if(((*offsets[COMP_BLOCK_NO] != expected_comp_block_no) && \
+				(*offsets[BLOCK_NO] != expected_block_no))) /* || \
+				((*offsets[COMP_BLOCK_NO] != expected_comp_block_no + 1) && \
+				(*offsets[BLOCK_NO] != expected_block_no - 1))) */
 			{
 				/* Look up YMODEM.txt to determine how the receiver
 				handles receiving the previous packet again. */
@@ -389,7 +391,9 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			 * "If using XMODEM and the checksum is bad, set bad
 			 * checksum error." */
 			else if((flags == XMODEM) && \
-				generate_chksum(offsets[DATA], (uint16_t) ((offsets[CHKSUM_CRC]) - offsets[DATA])) != *offsets[CHKSUM_CRC])
+				generate_chksum(offsets[DATA], \
+				(uint16_t) ((offsets[CHKSUM_CRC]) - offsets[DATA])) \
+				!= *offsets[CHKSUM_CRC])
 			{
 				status = BAD_CRC_CHKSUM;	
 			}

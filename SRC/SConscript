@@ -35,6 +35,16 @@ if 'dos' in env['TOOLS']:
 	
 #print env.Dump('LINKCOM')
 core_src_files = Split('TRXCOM.c USR_DEF.c XMODEM.c')
-env.Program('TRXCOM', core_src_files)
+core_exe = env.Program('TRXCOM', core_src_files)
 
 #Now build the platform-dependent files (if any)...
+
+#Install if the host OS matches target OS
+if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
+	env.Install(env['HOST_INSTALL_DIR'], core_exe)
+else:
+	env.Xfer('dummy', 'TRXCOM')
+
+#Or install over a serial line
+#if 'xfer' in COMMAND_LINE_TARGETS:
+#	env.Xfer('dummy', 'TRXCOM')

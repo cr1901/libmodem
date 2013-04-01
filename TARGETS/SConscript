@@ -1,9 +1,37 @@
 #TARGETS SConscript
 #Get settings.py values to determine the target. Use platform as well.
 
+#def serial_xfer(target, source, env):
+#	from subprocess import call
+#	call(["TRXCOM", "/T /X /CRC /1K /B:19200 /P:4"])
+
 import os
-Import('default_env')
-#env = Environment(tools = ['mingw'], toolpath = ['.'])
+Import('env')
+
+#Use Scons default tools if they are built in (with changes to relevant variables
+#env = env.Clone(tools = ['mingw'], toolpath = ['.'])
+if env['TARGET_OS'] == 'WIN32':
+	env = env.Clone(tools = ['default', 'mingw'], toolpath = ['.'], CCFLAGS='')
+	
+#However, if the tools to build do NOT exist, execute a script to create them.	
+elif env['TARGET_OS'] == 'DOS':
+	env = env.Clone(tools = ['default', 'dos'], toolpath = ['.'])
+
+
+if env['DEBUG_MESSAGES']:
+	print 'Dumping Environment: ' + env.Dump()
+
+
+#If host same as target
+if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
+	env.Alias('install', env['HOST_INSTALL_DIR'])
+#else:
+#	env.Alias('install', 'xfer')
+
 #env = default_env.Clone(tools = ['mingw'], toolpath = ['.'])
-env = Environment(tools = ['default', 'dos'], toolpath = ['.'])
+
+env.AppendENVPath('PATH', env['HOST_INSTALL_DIR'])
+bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:19200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
+env.Append(BUILDERS = {'Xfer' : bld})
+
 Export('env')

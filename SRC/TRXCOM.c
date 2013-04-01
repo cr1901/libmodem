@@ -2,12 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <stdint.h>
 #include "modem.h"
 
 #define EVER ;;
-#define TRUE 1
-#define FALSE 0
-
 
 void print_banner(void);
 //void print_error(void);
@@ -17,20 +15,18 @@ int16_t byte_swap(int16_t standard);
 int main(int argc, char * argv[])
 {
 	/* Add macros for choosing sizes */
-	char filename[128] = {'\0'};
-	char com_name[8]={'\0'};
-	short int txrx_flags = XMODEM;
-	int rx_mode = FALSE, device_mode = FALSE, use_1k = FALSE, \
-		port_no = 1;
-	long int baud_rate = 9600;	
-
-	char * current_arg, * previous_arg;
-	int malformed = FALSE, unrecognized = FALSE, count;
+	uint8_t filename[128] = {'\0'}, com_name[8] = {'\0'}, xmodem_buffer[133] = {'\0'}, \
+		txrx_flags = XMODEM, rx_mode = MODEM_FALSE, \
+		device_mode = MODEM_FALSE, use_1k = MODEM_FALSE, \
+		port_no = 1, malformed = MODEM_FALSE, unrecognized = MODEM_FALSE, \
+		count;
 	
-	char test = 'A';
-	modem_file_t * trx_file;
-	uint8_t xmodem_buffer[133] = {'\0'};
+	uint8_t * current_arg, * previous_arg;
+	
 	uint16_t status;
+	uint32_t baud_rate = 9600;	
+	
+	modem_file_t * trx_file;
 	serial_handle_t com_port;
 	
 	print_banner();
@@ -60,7 +56,7 @@ int main(int argc, char * argv[])
 				}
 				else if(!strcmp(current_arg, "/R"))
 				{
-					rx_mode = TRUE;
+					rx_mode = MODEM_TRUE;
 				}
 				else if(!strcmp(current_arg, "/X"))
 				{
@@ -73,11 +69,11 @@ int main(int argc, char * argv[])
 				}
 				else if(!strncmp(current_arg, "/B:", 3))
 				{
-					baud_rate = atoi(current_arg + 3);
+					baud_rate = (uint32_t) atol(current_arg + 3);
 				}
 				else if(!strncmp(current_arg, "/P:", 3))
 				{
-					port_no = atoi(current_arg + 3);
+					port_no = (uint8_t) atoi(current_arg + 3);
 				}
 				
 				/* Begin else-if logic dependent on previous switches. */			
@@ -85,7 +81,7 @@ int main(int argc, char * argv[])
 				else if(!strcmp(current_arg, "/S") && (!strcmp(previous_arg, "/T") || !strcmp(previous_arg, "/R")))
 				{
 					/* Switch is valid. */
-					device_mode = TRUE;
+					device_mode = MODEM_TRUE;
 				}
 				/* And so on... */
 				else if(!strcmp(current_arg, "/CRC") && (!strcmp(previous_arg, "/X")))
@@ -143,7 +139,7 @@ int main(int argc, char * argv[])
 		
 		return 0;	*/
 		
-		if(rx_mode == TRUE)
+		if(rx_mode == MODEM_TRUE)
 		{
 			trx_file = modem_fopen_write(filename);
 			if(trx_file != NULL)
@@ -185,8 +181,8 @@ int main(int argc, char * argv[])
 
 void print_banner(void)
 {
-	printf("TRXCOM- Transit and Receive files via COM ports\n");
-	printf("Copyright 2013 William D. Jones\n");
+	printf("TRXCOM- Transit and Receive files via COM ports\n"
+	"Copyright 2013 William D. Jones\n");
 }
 
 //Implement redirection to stdout (look up redirection in C).

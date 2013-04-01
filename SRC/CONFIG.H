@@ -23,8 +23,10 @@
  * not exist on the target system's compiler. */
 #define USING_DIFFTIME
 
-/* Define if debug functionality is desired. */
-#define DEBUG
+/* Define if debugging messages should be sent to stderr.
+ * Keep in mind that DOS does not permit redirection of stderr (send stdout to
+ * NUL as an alternative). */
+//#define USE_DEBUG_MESSAGES
 
 /* Define if messages detailing current transfer should be print.
 This is a temporary feature until logic for the code to yield 
