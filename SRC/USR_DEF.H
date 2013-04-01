@@ -3,6 +3,7 @@
 #ifndef USR_DEF_H
 #define USR_DEF_H
 #include "config.h"
+#include <stdio.h>
 
 
 /** Abstraction layer **/
@@ -19,6 +20,28 @@
 #elif defined(__VIC20__)
 	#define SERIAL_HANDLE void *
 #endif
+
+
+/* Certain systems may not support redirection of stderr. */
+//Doesn't work. Also might not be the right way to do this...
+/* #ifdef __DOS__
+	FILE * debug_stream = stdout;
+	FILE * message_stream = stderr;
+#else
+	FILE * debug_stream = stderr;
+	FILE * message_stream = stdout;
+#endif */
+
+
+/* #ifdef __DOS__
+	#define DEBUG_STREAM stdout
+	#define MESSAGE_STREAM stderr
+#else
+	#define DEBUG_STREAM stderr
+	#define MESSAGE_STREAM stdout
+#endif */
+
+
 
 
 /** Library typedefs affected by platform specific defines. **/
@@ -51,6 +74,7 @@
  * case it is safe to set it to the peripheral's memory-mapped or
  * port-mapped address. NULL is reserved for failure. */
 typedef SERIAL_HANDLE serial_handle_t;
+
 
 
 #endif

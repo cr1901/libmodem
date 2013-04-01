@@ -300,7 +300,9 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		rx_buffer[0] = NUL;
 		/* Wait for first character. */
 		
-		do{
+		while(MODEM_TRUE)
+		{
+		//do{
 			error_count++; 
 			if(error_count > 11)
 			{
@@ -320,25 +322,41 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			} 
 			
 			status = serial_rcv(rx_buffer, 1, 10, serial_device);
+			
+			if(rx_buffer[0] == expected_start_char_2 \
+				|| rx_buffer[0] == expected_start_char_1)
+			{
+				break;
+			} 
+			else if(rx_buffer[0] == EOT)
+			{
+				eot_detected = MODEM_TRUE;
+				break;
+			}
+			
 			if(status == TIMEOUT)
 			{
+				//debug-printf eventually?
 				//printf("Timeout occurred.\n");
 				serial_snd(&tx_code, 1, serial_device);
 			}
 			
-			printf("Character received while waiting: %X\n", rx_buffer[0]);
-			printf("Status inside initial loop: %X\n", status);
-		}while((rx_buffer[0] != expected_start_char_1 \
+			#ifdef USE_DEBUG_MESSAGES
+				printf("Character received while waiting: %c\n", rx_buffer[0]);
+				printf("Status inside initial loop: %X\n", status);
+			#endif
+		}	
+		/* }while((rx_buffer[0] != expected_start_char_1 \
 			&& rx_buffer[0] != expected_start_char_2) \
-			&& rx_buffer[0] != EOT);
+			&& rx_buffer[0] != EOT); */
 		/* Get out of the loop AS SOON AS the 
 		 * correct character is detected to minimize race
 		 * condition potential if using polling I/O. */
 		
-		if(rx_buffer[0] == EOT)
+		/* if(rx_buffer[0] == EOT)
 		{
 			eot_detected = MODEM_TRUE;
-		}
+		} */
 		
 		if(!eot_detected)
 		{
@@ -356,14 +374,40 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 					using_128_blocks_in_1k = MODEM_FALSE;
 				}
 			}
-			 
+			
+			
+			
 			count = 1; /* First character must be preserved because all
 				* offsets have been set. If not preserved,
 				* all data is shifted to by one element downward. */
-			do{
+			status = serial_rcv(rx_buffer + 1, (offsets[END] - offsets[BLOCK_NO]), 1, serial_device);
+			
+			
+			/* Check for small XMODEM-1K packet. */ 
+			/* if(flags == XMODEM_1K)
+			{
+				if((rx_buffer[0] == SOH) && !using_128_blocks_in_1k)
+				{
+					set_packet_offsets(names, offsets, rx_buffer, XMODEM_CRC);
+					using_128_blocks_in_1k = MODEM_TRUE;
+					status = NO_ERROR;
+				}
+				else if((rx_buffer[0] == STX) && using_128_blocks_in_1k)
+				{
+					set_packet_offsets(names, offsets, rx_buffer, XMODEM_1K);
+					using_128_blocks_in_1k = MODEM_FALSE;
+					status = NO_ERROR;
+				}
+			} */
+			
+			/* do{
 				status = serial_rcv(rx_buffer + count, 1, 1, serial_device);
 				count++;
-			}while((count <= (offsets[END] - offsets[BLOCK_NO])) && status == NO_ERRORS);
+				#ifdef USE_DEBUG_MESSAGES
+					printf("Getting byte %u...\r", count);
+					fflush(stdout);
+				#endif
+			}while((count <= (offsets[END] - offsets[BLOCK_NO])) && status == NO_ERRORS); */
 			
 			
 			/* Check for common errors. */
@@ -444,6 +488,10 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 					serial_snd(&tx_code, 1, serial_device);
 					return UNDEFINED_ERROR;
 			}
+			#ifdef USE_DEBUG_MESSAGES
+				printf("Status receiving remainder of packet: %X\n", status);
+			#endif
+			
 			#ifdef DISPLAY_MESSAGES
 				printf("%lu bytes received...\r", current_offset);
 				/* This will display the buffer each line, instead

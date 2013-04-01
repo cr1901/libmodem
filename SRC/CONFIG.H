@@ -25,7 +25,18 @@
 
 /* Define if debugging messages should be sent to stderr.
  * Keep in mind that DOS does not permit redirection of stderr (send stdout to
- * NUL as an alternative). */
+ * NUL as an alternative). 
+ * Debugging messages require <stdio.h> and streams to be well-defined and
+ * feasible (space wise) for your target. */
+ 
+/* Be prepared for the maximum possible transfer speed to decrease
+ * greatly with this option enabled!
+ * Example: 19,200 baud on IBM 4.77 MHz is very likely to fail with XMODEM-1K 
+ * due to the buffer size of the serial port library not holding the entire packet.
+ * There are debug messages being print out after receiving the initial
+ * character but before checking whether the character is a valid/expected
+ * value. At 19,200 baud and above, the entire packet may arrive between printing
+ * out characters to the console and the ISR receiving characters from the serial port. */
 //#define USE_DEBUG_MESSAGES
 
 /* Define if messages detailing current transfer should be print.

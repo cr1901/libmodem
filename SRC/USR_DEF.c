@@ -117,6 +117,12 @@ extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, 
 {
 	/* Timeout measured against system timer, 1/18 second per tick. */
 	int prev_timeout = comgettimeout();
+	
+	/* if(_PL_comoverflow)
+	{
+		printf("Overflow of buffer!\n");
+	} */
+	
 	comsettimeout((int) (timeout * 18));
 	if(!comread((char *) data, (int) num_bytes))
 	{
