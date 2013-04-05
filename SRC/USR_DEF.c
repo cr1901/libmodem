@@ -327,7 +327,7 @@ uint16_t serial_close(serial_handle_t * port_addr)
 {
 	/* Both the flush and close must succeed to return
 	 * without error. */
-	if(!serial_flush(port_addr) && CloseHandle((* port_addr)))
+	if((serial_flush(port_addr) == NO_ERRORS) && CloseHandle((* port_addr)))
 	{
 		(* port_addr) = NULL;
 		return NO_ERRORS;

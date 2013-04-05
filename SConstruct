@@ -15,6 +15,7 @@ vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
 http://stackoverflow.com/questions/9744867/scons-how-to-add-a-new-command-line-variable-to-an-existing-construction-enviro"""
 
 env = Environment(variables = vars)
+Help(vars.GenerateHelpText(env))
 
 #According to SCons documentation (2.2.0), the user is free to override internal
 #variable TARGET_OS
@@ -33,6 +34,10 @@ if env['DEBUG_MESSAGES']:
 Export('env')
 
 SConscript(['TARGETS/SConscript'])
-SConscript(['SRC/SConscript'])
+SConscript(['SRC/SConscript'], variant_dir = 'BIN/' + env['TARGET_OS'], duplicate=0)
+
+#http://www.knowthytools.com/2009/05/scons-cleaning-variantdir.html
+Clean('.', 'BIN/' + env['TARGET_OS'])
 #SConscript(['SRC/GUI/SConscript'])
 
+#Additional help goes here...
