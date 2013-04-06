@@ -15,13 +15,17 @@ int16_t byte_swap(int16_t standard);
 int main(int argc, char * argv[])
 {
 	/* Add macros for choosing sizes */
-	uint8_t filename[128] = {'\0'}, com_name[8] = {'\0'}, xmodem_buffer[133] = {'\0'}, \
-		txrx_flags = XMODEM, rx_mode = MODEM_FALSE, \
-		device_mode = MODEM_FALSE, use_1k = MODEM_FALSE, \
-		port_no = 1, malformed = MODEM_FALSE, unrecognized = MODEM_FALSE, \
-		count;
+	uint8_t txrx_flags = XMODEM, rx_mode = MODEM_FALSE, \
+		port_no = 1, count, device_mode;
 	
-	uint8_t * current_arg, * previous_arg;
+	//Unused variables	
+	/* uint8_t use_1k = MODEM_FALSE, malformed = MODEM_FALSE, \
+		unrecognized = MODEM_FALSE, com_name[8] = {'\0'}, \
+		xmodem_buffer[133] = {'\0'}; */
+		
+	
+	/* Needs to be signed due to string literals... */
+	char filename[128] = {'\0'}, * current_arg, * previous_arg;
 	
 	uint16_t status;
 	uint32_t baud_rate = 9600;	
@@ -144,7 +148,7 @@ int main(int argc, char * argv[])
 			trx_file = modem_fopen_write(filename);
 			if(trx_file != NULL)
 			{
-				status = modem_rx(trx_file, com_port, txrx_flags);
+				status = xmodem_rx(trx_file, com_port, txrx_flags);
 				printf("Returned status code: %X", status);
 			}
 			else
@@ -158,7 +162,7 @@ int main(int argc, char * argv[])
 			trx_file = modem_fopen_read(filename);
 			if(trx_file != NULL)
 			{
-				status = modem_tx(trx_file, com_port, txrx_flags);
+				status = xmodem_tx(trx_file, com_port, txrx_flags);
 				printf("Returned status code: %X", status);
 			}
 			else

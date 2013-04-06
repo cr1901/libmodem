@@ -109,9 +109,10 @@ typedef struct modem_status{
 
 /* Global enums and status struct declarations */
 
-MODEM_ERRORS current_error;
-MODEM_STATUS current_status;
-XFER_MODES current_mode;
+/* Declare in functions which need it. Look up purpose of passing enums. */
+//MODEM_ERRORS current_error;
+//MODEM_STATUS current_status;
+//XFER_MODES current_mode;
 
 /* Fallback refers to downgrading from XMODEM-1K to XMODEM-CRC, which
  * may not be standard. Additionally, a distinction is made between

@@ -11,7 +11,8 @@ Import('env')
 #Use Scons default tools if they are built in (with changes to relevant variables
 #env = env.Clone(tools = ['mingw'], toolpath = ['.'])
 if env['TARGET_OS'] == 'WIN32':
-	env = env.Clone(tools = ['default', 'mingw'], toolpath = ['.'], CCFLAGS='')
+	env = env.Clone(tools = ['default', 'mingw'], toolpath = ['.'], \
+		CCFLAGS='-Wall -Wextra -std=c99 -pedantic-errors')
 	
 #However, if the tools to build do NOT exist, execute a script to create them.	
 elif env['TARGET_OS'] == 'DOS':
@@ -31,7 +32,7 @@ if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
 #env = default_env.Clone(tools = ['mingw'], toolpath = ['.'])
 
 env.AppendENVPath('PATH', env['HOST_INSTALL_DIR'])
-bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:19200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
+bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:115200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
 env.Append(BUILDERS = {'Xfer' : bld})
 
 Export('env')

@@ -185,8 +185,8 @@ uint16_t serial_flush(serial_handle_t port_addr)
 uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr)
 {
 	char com_string[12] = "\\\\.\\COM\0\0\0\0";
-	DCB dcbSerialParams = {0};
-	COMMTIMEOUTS timeouts= {0};
+	DCB dcbSerialParams;
+	COMMTIMEOUTS timeouts;
 
 	sprintf(&com_string[7], "%d", port_no);
 	(* port_addr) = CreateFile(com_string, GENERIC_READ | GENERIC_WRITE, 0, NULL, \
@@ -213,7 +213,7 @@ uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port
 	/* Using real values instead of CBR_BAUD_RATE for simplicity.
 	* Allowed according to MSDN:
 	* http://msdn.microsoft.com/en-us/library/windows/desktop/aa363214(v=vs.85).aspx */
-	printf("Baud rate: %lu\n", baud_rate);
+	//printf("Baud rate: %lu\n", baud_rate);
 	
 	dcbSerialParams.BaudRate=baud_rate;
 	dcbSerialParams.ByteSize=8;
@@ -270,8 +270,8 @@ extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, /* uint8_t timeou
 extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, serial_handle_t port)
 {	
 	DWORD dwBytesRead = 0;
-	COMMTIMEOUTS prev_timeouts= {0};
-	COMMTIMEOUTS curr_timeouts= {0};
+	COMMTIMEOUTS prev_timeouts;
+	COMMTIMEOUTS curr_timeouts;
 	
 	//printf("Time left in timeout: %d\n", timeout);
 	

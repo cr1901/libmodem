@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+//#include <inttypes.h>
 
-static void set_packet_offsets(OFFSET_NAMES names, uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode);
+static void set_packet_offsets(uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode);
 static void purge(serial_handle_t serial_device);
 static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
 //static void assemble_packet(XMODEM_OFFSETS * offsets, )
@@ -15,7 +16,7 @@ static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
 //static uint16_t modem_difftime()
 
 /** MODEM_RX- transmit file(s) to external equipment. **/
-uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
+uint16_t xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
 {
 	/* Array of pointers to the six packet section offsets within the 
 	 * buffer holding the packet. */
@@ -26,7 +27,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	static uint8_t rx_code = NUL;
 	
 	/* May be better practice then using a single static global enum. */
-	static OFFSET_NAMES names;
+	//static OFFSET_NAMES names;
 	
 	/* fseek(SEEK_CUR) may not be portable, as described here:
 	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
@@ -34,11 +35,11 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	 * 4G+ files... */
 	uint32_t current_offset = 0;
 	
-	uint16_t count; /* Loop variable. */
+	uint16_t count, /* Loop variable. */ \
+		status = 0, crc16 = 0;
 	
-	uint16_t bytes_written = 0, status = 0, elapsed_time = 0, \
-			crc16 = 0, num_1k_xfer_failures = 0;
-	
+	//uint16_t  bytes_written = 0, elapsed_time = 0, num_1k_xfer_failures = 0;
+			
 	/* Logic variables. */
 	uint8_t eof_detected = MODEM_FALSE, \
 			using_128_blocks_in_1k = MODEM_FALSE;
@@ -53,11 +54,17 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	/* Flush the buffer in case some characters were remaining
 	 * to prevent glitches. */ 
 	serial_flush(serial_device);
+	status = wait_for_rx_ready(serial_device, flags);
+	
+	if(status != NO_ERRORS)
+	{
+		return status;
+	}
 	
 	
 	/* Depending on mode set, set offsets. */	
-	set_packet_offsets(names, offsets, tx_buffer, flags);
-	/* set_packet_offsets(names, &offsets, tx_buffer, flags); Why wasn't this error caught? */
+	set_packet_offsets(offsets, tx_buffer, flags);
+	/* set_packet_offsets(&offsets, tx_buffer, flags); Why wasn't this error caught? */
 	modem_fseek(f_ptr, 0);
 	
 	
@@ -80,7 +87,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		/* if(flags == (FALLBACK | XMODEM_1K) && num_xfer_1k_failures > 3)
 		{
 			flags &= XMODEM_CRC;
-			set_packet_offsets(names, &offsets, tx_buffer, flags);
+			set_packet_offsets(&offsets, tx_buffer, flags);
 			*offsets[START_CHAR] = SOH;
 		} */
 		
@@ -94,7 +101,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		
 		/* else if((flags == XMODEM_1K) && using_128_blocks_in_1k)
 		{
-			set_packet_offsets(names, &offsets, tx_buffer, XMODEM_1K);
+			set_packet_offsets(&offsets, tx_buffer, XMODEM_1K);
 			*offsets[START_CHAR] = STX;
 			using_128_blocks_in_1k = MODEM_FALSE;
 		} */
@@ -105,13 +112,13 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		 * an 128 byte to reduce overhead. */
 		if((flags == XMODEM_1K) && \
 		!using_128_blocks_in_1k && \
-		(bytes_read < offsets[CHKSUM_CRC] - offsets[DATA]))
+		(bytes_read < (size_t) (offsets[CHKSUM_CRC] - offsets[DATA])))
 		{
 			/* Todo: Add logic to check is feof encountered.- W. Jones */
 			
 			/* Does not alter flags byte to distinguish XMODEM_CRC
 			 * and XMODEM_1K with 128-byte packets. */
-			set_packet_offsets(names, offsets, tx_buffer, XMODEM_CRC);
+			set_packet_offsets(offsets, tx_buffer, XMODEM_CRC);
 			*offsets[START_CHAR] = SOH;
 			using_128_blocks_in_1k = MODEM_TRUE;
 			
@@ -128,7 +135,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		 * check to see if EOF was reached. If not, error occurred 
 		 * and abort. This also handles the case where the file
 		 * ends on a packet-size boundary (write CPMEOF for entire packet). */
-		if(bytes_read < offsets[CHKSUM_CRC] - offsets[DATA])
+		if(bytes_read < (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]))
 		{
 			if(modem_feof(f_ptr))
 			{
@@ -147,7 +154,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 		{
 			/* In the case the EOF was not detected */
 		}
-		//else if(set_packet_offsets(names, &offsets, tx_buffer, flags);
+		//else if(set_packet_offsets(&offsets, tx_buffer, flags);
 
 
 		switch(flags)
@@ -224,7 +231,7 @@ uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 }
 
 /** MODEM_RX- receive file(s) from external equipment. **/
-uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
+uint16_t xmodem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
 {
 	/* Array of pointers to the six packet section offsets within the 
 	 * buffer holding the packet. */
@@ -235,7 +242,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	static uint8_t tx_code = NUL;
 	
 	/* May be better practice then using a single static global enum. */
-	static OFFSET_NAMES names;
+	//static OFFSET_NAMES names;
 	
 	/* fseek(SEEK_CUR) may not be portable, as described here:
 	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
@@ -243,17 +250,18 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	 * 4G+ files... */
 	uint32_t current_offset = 0;
 	
-	uint16_t count; /* Loop variable. */
+	uint16_t count, /* Loop variable. */ \
+		status = 0, error_count = 0; 
 	
-	uint16_t status = 0, elapsed_time = 0, \
-			crc16 = 0, error_count = 0, chksum = 0;
+	//uint16_t elapsed_time = 0, crc16 = 0, chksum = 0;
 	
 	uint8_t expected_start_char_1 = 0, expected_start_char_2 = 0, \
 			expected_block_no = 0, expected_comp_block_no = 0;
 	
 	/* Logic variables. */
-	uint8_t eot_detected = MODEM_FALSE, expected_rx_detected = MODEM_FALSE, \
-			using_128_blocks_in_1k = MODEM_FALSE;
+	uint8_t eot_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
+	
+	//uint8_t expected_rx_detected = MODEM_FALSE
 	
 	/* Check to see if EOF was reached using bytes_read */
 	size_t bytes_written;
@@ -265,7 +273,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 	
 	
 	/* Depending on mode set, set offsets. */	
-	set_packet_offsets(names, offsets, rx_buffer, flags);
+	set_packet_offsets(offsets, rx_buffer, flags);
 	modem_fseek(f_ptr, 0);
 	
 	/* Set initial transmission code and expected response. */
@@ -318,7 +326,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			{
 				flags = XMODEM;
 				tx_code = NAK;
-				set_packet_offsets(names, offsets, rx_buffer, flags);
+				set_packet_offsets(offsets, rx_buffer, flags);
 			} 
 			
 			status = serial_rcv(rx_buffer, 1, 10, serial_device);
@@ -365,12 +373,12 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			{
 				if((rx_buffer[0] == SOH) && !using_128_blocks_in_1k)
 				{
-					set_packet_offsets(names, offsets, rx_buffer, XMODEM_CRC);
+					set_packet_offsets(offsets, rx_buffer, XMODEM_CRC);
 					using_128_blocks_in_1k = MODEM_TRUE;
 				}
 				else if((rx_buffer[0] == STX) && using_128_blocks_in_1k)
 				{
-					set_packet_offsets(names, offsets, rx_buffer, XMODEM_1K);
+					set_packet_offsets(offsets, rx_buffer, XMODEM_1K);
 					using_128_blocks_in_1k = MODEM_FALSE;
 				}
 			}
@@ -388,13 +396,13 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 			{
 				if((rx_buffer[0] == SOH) && !using_128_blocks_in_1k)
 				{
-					set_packet_offsets(names, offsets, rx_buffer, XMODEM_CRC);
+					set_packet_offsets(offsets, rx_buffer, XMODEM_CRC);
 					using_128_blocks_in_1k = MODEM_TRUE;
 					status = NO_ERROR;
 				}
 				else if((rx_buffer[0] == STX) && using_128_blocks_in_1k)
 				{
-					set_packet_offsets(names, offsets, rx_buffer, XMODEM_1K);
+					set_packet_offsets(offsets, rx_buffer, XMODEM_1K);
 					using_128_blocks_in_1k = MODEM_FALSE;
 					status = NO_ERROR;
 				}
@@ -467,7 +475,7 @@ uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t f
 					expected_comp_block_no = ~(++expected_block_no);
 					bytes_written = modem_fwrite(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), f_ptr);
 					//printf("Number bytes written: %d\n", bytes_written);
-					if(bytes_written < offsets[CHKSUM_CRC] - offsets[DATA])
+					if(bytes_written < (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]))
 					{
 						tx_code = CAN;
 						serial_snd(&tx_code, 1, serial_device);
@@ -552,9 +560,9 @@ uint16_t generate_crc(uint8_t * data, uint16_t size)
 
 
 /** Static functions. **/
-static void set_packet_offsets(OFFSET_NAMES names, uint8_t ** packet_offsets, \
-	uint8_t * packet, uint8_t mode)
+static void set_packet_offsets(uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode)
 {
+	//int START_CHAR = 0; Not causing error- why?
 	packet_offsets[START_CHAR] = packet;
 	packet_offsets[BLOCK_NO] = packet + 1;
 	packet_offsets[COMP_BLOCK_NO] = packet + 2;
