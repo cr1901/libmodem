@@ -10,8 +10,8 @@ static void purge(serial_handle_t serial_device);
 static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
 //static void assemble_packet(XMODEM_OFFSETS * offsets, )
 //static void disassemble_packet()
-
 /* Implement this! */
+
 //static uint16_t modem_difftime()
 
 /** MODEM_RX- transmit file(s) to external equipment. **/

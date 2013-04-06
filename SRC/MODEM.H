@@ -57,16 +57,6 @@
  * so underscored is omitted. */
 #define CPMEOF SUB
 
-
-/* ZMODEM defines (may be implemented as a separate project- ZMODEM
- * is a mess compared to X/YMODEM) */
-#define ZPAD '*'
-#define ZBIN 'A'
-#define ZBIN32 'C'
-/* ZMODEM Data Link Escape character. 5 sequential ZDLE's end a
- * ZMODEM transmission prematurely. */
-#define ZDLE CAN
-
 /** Constants which define offsets into TXRX buffer. **/
 /* Indices to an array which point to locations within a packet.
  * Pointer arithmetic between offsets gets the number of octets (bytes)
@@ -81,63 +71,89 @@ typedef enum offset_names
 	END
 }OFFSET_NAMES;
 
-
+/** Receive/Send status codes. **/
+typedef enum modem_errors{
+	NO_ERRORS = 0,
+	BAD_CRC_CHKSUM,
+	SENT_NAK,
+	PACKET_MISMATCH, /* Packet equals number different from expected. */
+	ASYNC_XFER_INCOMPLETE, /* May not be useful. */
+	FILE_ERROR,
+	UNDEFINED_ERROR, /* Placeholder error. */
+	SERIAL_ERROR, /* Error reading, writing, or accessing serial device. */
+	TIMEOUT,	/* No data was read in expected time frame. */
+	INVALID_MODE, /* Invalid xfer mode for function (i.e. using YMODEM_G in XMODEM). */
+	NOT_IMPLEMENTED
+}MODEM_ERRORS;
 
 /** RX/TX input flags. **/
-#define XMODEM 0x00
-#define XMODEM_CRC 0x01
-#define XMODEM_1K 0x02
-#define XMODEM7 0x03
-#define YMODEM 0x04
-#define YMODEM_1K 0x05
-#define YMODEM_G 0x06
-#define ZMODEM 0x07
+typedef enum xfer_modes
+{
+	XMODEM = 0,
+	XMODEM_CRC,
+	XMODEM_1K,
+	XMODEM7,
+	YMODEM,
+	YMODEM_1K,
+	YMODEM_G,
+	ZMODEM,
+	KERMIT
+}XFER_MODES;
+
+typedef struct modem_status{
+	uint32_t bytes_transferred;
+	uint16_t time_elapsed;
+	char * filename;	
+}MODEM_STATUS;
+
+
+/* Global enums and status struct declarations */
+
+MODEM_ERRORS current_error;
+MODEM_STATUS current_status;
+XFER_MODES current_mode;
 
 /* Fallback refers to downgrading from XMODEM-1K to XMODEM-CRC, which
  * may not be standard. Additionally, a distinction is made between
  * XMODEM-CRC and XMODEM-1K with 128-byte packets, though they are
- * effectively transfer the same bytes for a given packet.
- * Removed to make protocol receiver-driven. Distinction between
+ * effectively transfer the same bytes for a given packet. */
+ 
+ 
+ /* * Removed to make protocol receiver-driven. Distinction between
  * XMODEM-1K with 128 packets and XMODEM-CRC is still made- W. Jones. */
 //#define FALLBACK BIT(3)
 
-/** Receive/Send status codes. **/
-/* If using interrupt-driven send/receive routines, status codes
- * permit the return from the send/receive routines before an entire
- * packet is received/transmitted, ASYNC_XFER_INCOMPLETE in particular.
- * Status codes are updated at the end of every send/receive block.
- * Here, 0 is false, nonzero (1) is true. */
- /* This is the LSbyte of the 16-bit return code/status bytes. */
+
 
 /* Currently, ignore contradictions in the code when reading this section.
  * I just haven't taken the time to implement the return values yet!
  * - W. Jones */
 
 /* Serial status codes */
-#define TIMEOUT BIT(7)
+//#define TIMEOUT BIT(7)
 /* Use SERIAL_ERROR for any other situation besides timeout.
  * However, if a function is capable of timing out (rcv), return 
  * TIMEOUT on error. */
-#define SERIAL_ERROR BIT(6)
+//#define SERIAL_ERROR BIT(6)
 
 /* May not be useful... */
-#define ASYNC_XFER_INCOMPLETE BIT(5)
+//#define ASYNC_XFER_INCOMPLETE BIT(5)
 
 /* Critical Errors */
-#define FILE_ERROR BIT(4)
-#define PACKET_MISMATCH BIT(3)
-#define UNDEFINED_ERROR BIT(2)
+//#define FILE_ERROR BIT(4)
+//#define PACKET_MISMATCH BIT(3)
+//#define UNDEFINED_ERROR BIT(2)
 
 /* Recoverable Errors */
 
 /* Xfer status codes */
 
-#define SENT_NAK BIT(1)
+//#define SENT_NAK BIT(1)
 
-/* Packet equals number different from expected. */
 
-#define BAD_CRC_CHKSUM BIT(0)
-#define NO_ERRORS 0x00
+
+//#define BAD_CRC_CHKSUM BIT(0)
+//#define NO_ERRORS 0x00
 
 /* XMODEM 7 should go here as well. */
 
@@ -157,15 +173,22 @@ typedef enum offset_names
    * Start timer, exec rcv... if no error, stop/reset timer, else loop (if timeout by end, break). */
 //session_function(parameters);
 
-uint16_t modem_tx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
-uint16_t modem_rx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
+/* Wrapper function for all possible xfer modes (wrapper.c). 
+(Possibly open serial port as well?) */
+//uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+uint16_t xmodem_tx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
+uint16_t xmodem_rx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t zmodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t kermit_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+//uint16_t kermit_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+
 /* xmodem_tx, xmodem_rx, xmodem_crc_tx, etc... or
 return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards 
 xmodem_tx, xmodem_rx, ymodem_tx, ymodem_rx, etc... */
-
-
-//uint16_t send_data(XMODEM_1K_PACKET * tx_packet, uint16_t (*tx_routine) (uint8_t * data, uint16_t num_bytes, uint8_t port_no));
-//uint16_t receive_data(XMODEM_1K_PACKET * rx_packet, uint16_t (*rx_routine) (uint8_t * data, uint16_t num_bytes)); 
 
 /* Change data sizes all to uint32_t? */
 uint8_t generate_chksum(uint8_t * data, uint16_t size);
@@ -196,7 +219,7 @@ uint16_t generate_crc(uint8_t * data, uint16_t size);
 #endif
 
 #ifndef USING_DIFFTIME
-	extern int modem_difftime(time_t time_2, time_t time_1);
+	extern (uint16_t) modem_difftime(time_t time_2, time_t time_1);
 #else
 	#define modem_difftime(_x, _y) (uint16_t) difftime(_x, _y)
 #endif
