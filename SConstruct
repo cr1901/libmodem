@@ -36,7 +36,7 @@ if env['DEBUG_MESSAGES']:
 Export('env')
 
 SConscript(['TARGETS/SConscript'])
-SConscript(['SRC/SConscript'], variant_dir = 'BIN/' + env['TARGET_OS'], duplicate=0)
+SConscript(['SRC/SConscript'], variant_dir = 'BIN/' + env['TARGET_OS'])
 
 #http://www.knowthytools.com/2009/05/scons-cleaning-variantdir.html
 Clean('.', 'BIN/' + env['TARGET_OS'])

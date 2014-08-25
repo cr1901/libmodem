@@ -3,6 +3,12 @@ import string
 
 Import('env')
 
+#Test for situations where compilation will surely fail
+platform_sanity_checks(env)
+#Get information about the environment
+perform_compiler_configuration(env, 0)
+
+
 #If external libraries are required for the base-executable, check for them now.
 if env['TARGET_OS'] == 'DOS':
 	env.Append(CPPPATH = ['#/../PICTOR'])

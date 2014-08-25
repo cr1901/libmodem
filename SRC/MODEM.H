@@ -76,6 +76,7 @@ typedef enum modem_errors{
 	NO_ERRORS = 0,
 	BAD_CRC_CHKSUM,
 	SENT_NAK,
+	SENT_CAN,
 	PACKET_MISMATCH, /* Packet equals number different from expected. */
 	ASYNC_XFER_INCOMPLETE, /* May not be useful. */
 	FILE_ERROR,

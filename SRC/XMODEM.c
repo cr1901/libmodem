@@ -3,7 +3,7 @@
 #include "files.h"
 #include "modem.h"
 #include "config.h"
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
@@ -203,7 +203,7 @@ MODEM_ERRORS xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint
 			}
 			else if(rx_code == CAN)
 			{
-				return EXIT_FAILURE;
+				return SENT_CAN;
 			}
 			else if(rx_code == ACK)
 			{
@@ -230,7 +230,8 @@ MODEM_ERRORS xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint
 		status = serial_rcv(&rx_code, 1, 60, serial_device);
 	}
 	
-	return rx_code == ACK ? EXIT_SUCCESS : EXIT_FAILURE;
+	/* Add logic to incorporate status code on last packet later... */
+	return rx_code == ACK ? NO_ERRORS : SENT_CAN;
 }
 
 /** MODEM_RX- receive file(s) from external equipment. **/
@@ -517,7 +518,7 @@ MODEM_ERRORS xmodem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint
 	tx_code = ACK; 
 	status = serial_snd(&tx_code, 1, serial_device);
 	
-	return EXIT_SUCCESS;
+	return NO_ERRORS;
 }
 
 
