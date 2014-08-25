@@ -178,10 +178,10 @@ typedef struct modem_status{
 (Possibly open serial port as well?) */
 //uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 //uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-uint16_t xmodem_tx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
-uint16_t xmodem_rx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+MODEM_ERRORS xmodem_tx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
+MODEM_ERRORS xmodem_rx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
+MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 //uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 //uint16_t zmodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 //uint16_t kermit_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
@@ -196,80 +196,13 @@ uint8_t generate_chksum(uint8_t * data, uint16_t size);
 uint16_t generate_crc(uint8_t * data, uint16_t size);
 
 
-/** User-implemented functions. **/
-/* File opening and closing. If stdio is not used, comparable
- * routines need to be implemented. Use the macros below as
- * an example on how to implement such routines. */
- //fread/fwrite, size_t issues...
-#ifndef USING_STDIO_H
-	extern modem_file_t * modem_fopen_read(const char * name);
-	extern modem_file_t * modem_fopen_write(const char * name);
-	extern int modem_fclose(modem_file_t * stream);
-	extern int modem_fseek(modem_file_t * stream, long int offset);
-	extern size_t modem_fread(void * ptr, size_t count, modem_file_t * stream);
-	extern size_t modem_fwrite(const void * ptr, size_t count, modem_file_t * stream);
-	extern int modem_feof(modem_file_t * stream);
-#else
-	#define modem_fopen_read(_x) fopen(_x, "rb")
-	#define modem_fopen_write(_x) fopen(_x, "wb")
-	#define modem_fclose(_x) fclose(_x)
-	#define modem_fseek(_x, _y) fseek(_x, _y, SEEK_SET)
-	#define modem_fread(_x, _y, _z) fread(_x, sizeof(uint8_t), _y, _z)
-	#define modem_fwrite(_x, _y, _z) fwrite(_x, sizeof(uint8_t), _y, _z)
-	#define modem_feof(_x) feof(_x)
-#endif
-
-#ifndef USING_DIFFTIME
-	extern (uint16_t) modem_difftime(time_t time_2, time_t time_1);
-#else
-	#define modem_difftime(_x, _y) (uint16_t) difftime(_x, _y)
-#endif
-
 /* If using asynchronous I/O (interrupt-driven), use an idle function to
  * get other small things done within the context of an application
  * program (NOT the OS- let the OS handle multitasking with it's own
  * mechanisms).
  * Also includes an error handler 
  * Examples... update a status bar/report errors using stdout. */
-extern void idle(void);
-extern void error_handler(uint16_t status);
-
-/* File attributes functions (take in filename, return info). */
-
-//extern uint32 get_file_size(char * filename);
-//extern void get_modification_date(char * filename, char * mod_date);
-
-/* The next routines send and receive data in the context of a 
- * MODEM session. 
- * Requirements:
- * 1. Send/Receive Functions must take four parameters:
- * 	A. A pointer to arbitrary data bytes (meaning 8 bits, not necessarily 
- *     smallest addressable unit) to be transmitted.
- *  B. The number of bytes to be transmitted in the current function call. 
- *     Cast from uint32_t should be acceptable.
- *  C. Time IN SECONDS before the serial routine times out while waiting
- *     for a byte from the opposite end.
- *  D. Void pointer (serial_handle_t) to the serial port to be
- *     used for transmission.
- * 2. ALL below functions must return 0 on success, nonzero value on failure for
- *    any reason (at present time, either return TIMEOUT, SERIAL_ERROR, or
- * 	  NO_ERRORS).
- * 3. serial_handle_t must be set to NULL if error setting up 
- *    access to hardware occurs, or the port has been closed 
- *    (value at initialization not considered). */
-
-/* THANK GOD FOR <time.h>! */
-//extern uint16_t check_timer(timer_handle_t t_port);
-//extern timer_handle_t init_timer(void);
-//extern start_timer(timer_handle_t t_port); 
-//extern uint16_t reset_timer(timer_handle_t t_port);
-//extern uint16_t stop_timer(timer_handle_t t_port);
-
-/* Future- implement 7-bit support- described in ymodem.txt */
-extern uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr);
-extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, serial_handle_t port);
-extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, serial_handle_t port);
-extern uint16_t serial_close(serial_handle_t * port_addr);
-extern uint16_t serial_flush(serial_handle_t port_addr);
+extern void idle(MODEM_STATUS curr_status);
+extern void error_handler(MODEM_STATUS curr_status);
 
 #endif

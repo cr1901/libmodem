@@ -11,12 +11,14 @@ Import('env')
 #Use Scons default tools if they are built in (with changes to relevant variables
 #env = env.Clone(tools = ['mingw'], toolpath = ['.'])
 if env['TARGET_OS'] == 'WIN32':
-	env = env.Clone(tools = ['default', 'mingw'], toolpath = ['.'], \
+	env = env.Clone(tools = ['mingw'], \
 		CCFLAGS='-Wall -Wextra -std=c99 -pedantic-errors')
 	
 #However, if the tools to build do NOT exist, execute a script to create them.	
 elif env['TARGET_OS'] == 'DOS':
-	env = env.Clone(tools = ['default', 'dos'], toolpath = ['.'])
+	env = env.Clone(tools = ['watcom'])
+	env.Append(CCFLAGS='-bt=dos')
+	env['MEMMODEL16'] = 's'
 
 
 if env['DEBUG_MESSAGES']:

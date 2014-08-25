@@ -1,3 +1,6 @@
+#include "timewrap.h"
+#include "serial.h"
+#include "files.h"
 #include "modem.h"
 #include "config.h"
 #include <stdlib.h>
@@ -16,7 +19,7 @@ static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
 //static uint16_t modem_difftime()
 
 /** MODEM_RX- transmit file(s) to external equipment. **/
-uint16_t xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
+MODEM_ERRORS xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
 {
 	/* Array of pointers to the six packet section offsets within the 
 	 * buffer holding the packet. */
@@ -231,7 +234,7 @@ uint16_t xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t 
 }
 
 /** MODEM_RX- receive file(s) from external equipment. **/
-uint16_t xmodem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
+MODEM_ERRORS xmodem_rx(modem_file_t * f_ptr, serial_handle_t serial_device, uint8_t flags)
 {
 	/* Array of pointers to the six packet section offsets within the 
 	 * buffer holding the packet. */

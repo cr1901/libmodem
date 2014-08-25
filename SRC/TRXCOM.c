@@ -3,7 +3,9 @@
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
+#include "serial.h"
 #include "modem.h"
+#include "files.h"
 
 #define EVER ;;
 

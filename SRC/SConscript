@@ -1,12 +1,13 @@
 #SRC SConscript (Base Executable)
+import string
 
 Import('env')
 
 #If external libraries are required for the base-executable, check for them now.
-if 'dos' in env['TOOLS']:
+if env['TARGET_OS'] == 'DOS':
 	env.Append(CPPPATH = ['#/../PICTOR'])
 	env.Append(LIBPATH = ['#/../PICTOR'])
-	libname = 'PICTOR' + env['MEMMODEL'] + 'W'
+	libname = 'PICTOR' + string.capitalize(env.subst('$MEMMODEL')) + 'W'
 	
 	if not env.GetOption('clean'):
 		conf = Configure(env)
@@ -14,30 +15,30 @@ if 'dos' in env['TOOLS']:
 		#According to SCons manual, files are relative to top level directory
 		#for builders...
 		#if not conf.CheckLibWithHeader('../PICTOR/' + libname, '../PICTOR/COMLIB.H', 'c'):
-		
-		#Treat library not found warnings as errors
-		#oldflags = env['LINKFLAGS']
-		#env.Append(LINKFLAGS=' -we')
 		if not conf.CheckLibWithHeader(libname, 'COMLIB.H', 'c'):
 			print "PICTOR Library required for DOS target! "
 			"Install in the same directory where the top level "
 			"of this source tree resides."
 			Exit(1)
-		else:
-			#And relative for other actions
-			#env.Append(CPPPATH = ['#/../PICTOR'])
-			#env.Append(LIBPATH = ['#/../PICTOR'])
-			
-			#Restore original flags
-			#env['LINKFLAGS'] = oldflags
-			env = conf.Finish()
+
+		env = conf.Finish()
 			
 	
 #print env.Dump('LINKCOM')
-core_src_files = Split('TRXCOM.c USR_DEF.c XMODEM.c')
-core_exe = env.Program('TRXCOM', core_src_files)
+core_src_files = Split('TRXCOM.c  XMODEM.c YMODEM.c')
+core_platform_dependent = env['TARGET_OS'] + '/SERIAL.c'
+#env.Object(core_src_files)
+
+#Some compilers require explicit include of current directory IF THE HEADER FILES
+#are not present in the directory in which the source file is being compiled.
+env.AppendUnique(CPPPATH = '#')
+#env.Object(core_platform_dependent)
+
+core_exe = env.Program('TRXCOM', core_src_files + [core_platform_dependent])
 
 #Now build the platform-dependent files (if any)...
+
+
 
 #Install if the host OS matches target OS
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():

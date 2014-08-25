@@ -11,6 +11,8 @@ vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables
 vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
 	'WIN32', allowed_values=('WIN32', 'DOS')))
 
+vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/BIN'))
+
 """Use Update(env) to add variables to existing environment:
 http://stackoverflow.com/questions/9744867/scons-how-to-add-a-new-command-line-variable-to-an-existing-construction-enviro"""
 
