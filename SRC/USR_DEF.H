@@ -3,7 +3,6 @@
 #ifndef USR_DEF_H
 #define USR_DEF_H
 #include "config.h"
-#include <stdio.h>
 
 
 /** Abstraction layer **/
@@ -64,6 +63,7 @@
  * memory). Comparable routines will need to be implemented by end 
  * user/programmer. */
 #ifdef USING_STDIO_H
+	#include <stdio.h>
 	typedef FILE modem_file_t;
 #else
 	typedef MODEM_FILE modem_file_t;

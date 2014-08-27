@@ -171,15 +171,14 @@ MODEM_ERRORS xmodem_tx(modem_file_t * f_ptr, serial_handle_t serial_device, uint
 			default:
 				crc16 = generate_crc(offsets[DATA], \
 					(uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
-				#ifdef LITTLE_ENDIAN
-					/* Recall that CRC is 2 bytes, and so it needs to
-					 * be stored in the array of bytes. */
-					*(offsets[CHKSUM_CRC]) = ((crc16 & (0xFF00)) >> 8);
-					*(offsets[CHKSUM_CRC] + 1) = ((crc16 & (0x00FF)));
-				#else
-					*(offsets[CHKSUM_CRC]) = (crc16 & (0xFF00));
-					*(offsets[CHKSUM_CRC] + 1) = (crc16 & (0x00FF));	
-				#endif
+				/* Recall that CRC is 2 bytes, and so it needs to
+				 * be stored in the array of bytes. */
+				 
+				/* if sizeof(int) == 2, then 0xFF00 is unsigned int.
+				if sizeof(int) > 2, then 0xFF00 is int.
+				However the value ALWAYS remains positive. */
+				*(offsets[CHKSUM_CRC]) = ((crc16 & (0xFF00)) >> 8);
+				*(offsets[CHKSUM_CRC] + 1) = ((crc16 & (0x00FF)));
 		}
 		
 		//printf("Packet_size: %d\n", (offsets[END] - offsets[START_CHAR]));
