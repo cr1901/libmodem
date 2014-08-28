@@ -33,13 +33,32 @@ print 'Host platform is: ' + env['PLATFORM']
 print 'Target platform is: ' + env['TARGET_OS']
 if env['DEBUG_MESSAGES']:
 	print 'Dumping Environment: ' + env.Dump()
-Export('env')
 
-SConscript(['TARGETS/SConscript'])
-SConscript(['SRC/SConscript'], variant_dir = 'BIN/' + env['TARGET_OS'])
+env.Append(CPPPATH = '.') #See pitfalls for rationale.
+build_dir = Dir('BUILD/' + env['TARGET_OS'])
+env = SConscript(['TARGETS/SConscript'], exports = ['env'])
+SConscript(['SRC/SConscript'], exports = ['env'], variant_dir = build_dir, duplicate=0)
 
 #http://www.knowthytools.com/2009/05/scons-cleaning-variantdir.html
-Clean('.', 'BIN/' + env['TARGET_OS'])
+#Clean('.', 'BIN/' + env['TARGET_OS'])
 #SConscript(['SRC/GUI/SConscript'])
 
 #Additional help goes here...
+
+
+
+#Potential bugs/pitfalls
+#Possible SCons bugs?
+#Don't combine directory then string, unless Dir is a single-element list.
+#env.Append(CPPPATH = Dir('SRC'))
+#env.Append(CPPPATH = '.') #Breaks
+
+#When using a VariantDir, includes become relative to the variantdir if the following
+#line is used:
+#env.Append(CPPPATH = '.')
+#env.Append(CPPPATH = 'SRC') #This does not work, being the "true" variantdir
+#env.Append(CPPPATH = '#/SRC') #Neither does this
+#env.Append(CPPPATH = Dir('.')) #Or this...
+#env.Append(CPPPATH = Dir('SRC')) #Or this...
+#env.Append(CPPPATH = Dir('#/SRC')) #Or this!
+#See SRC/SConscript for more fun!

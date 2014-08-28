@@ -17,7 +17,9 @@ if env['TARGET_OS'] == 'WIN32':
 #However, if the tools to build do NOT exist, execute a script to create them.	
 elif env['TARGET_OS'] == 'DOS':
 	env = env.Clone(tools = ['watcom'])
-	env.Append(CCFLAGS='-bt=dos')
+	#env.Append(CCFLAGS='-bt=dos -za -wx -wce=303')
+	#-za causes configure tests to fail...
+	env.Append(CCFLAGS='-bt=dos -wx -wce=303')
 	env['MEMMODEL16'] = 's'
 
 
@@ -28,6 +30,8 @@ if env['DEBUG_MESSAGES']:
 #If host same as target
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
 	env.Alias('install', env['HOST_INSTALL_DIR'])
+	
+#env.Append(CPPPATH = Dir('#/BIN/' + env['TARGET_OS']))	
 #else:
 #	env.Alias('install', 'xfer')
 
@@ -37,4 +41,4 @@ env.AppendENVPath('PATH', env['HOST_INSTALL_DIR'])
 bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:115200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
 env.Append(BUILDERS = {'Xfer' : bld})
 
-Export('env')
+Return('env')

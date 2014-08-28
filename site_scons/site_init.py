@@ -10,25 +10,6 @@ def perform_compiler_configuration(env, freestanding):
 		conf.CheckCharBit()	
 			
 		conf.Finish()
-		
-		
-#def check_little_endian(env):
-#	context.Message('Checking whether target is little endian... ' )
-#	lastLIBS = context.env['LIBS']
-#	lastLIBPATH = context.env['LIBPATH']
-#	lastCPPPATH= context.env['CPPPATH']
-#	context.env.Append(LIBS = 'qt', LIBPATH = qtdir + '/lib', CPPPATH = qtdir + '/include' )
-#	ret = context.TryCompile("""
-#		#include <qapp.h>
-#		int main(int argc, char **argv) {
-#		QApplication qapp(argc, argv);
-#		return 0;
-#		}
-#		""")
-#if not ret:
-#	context.env.Replace(LIBS = lastLIBS, LIBPATH=lastLIBPATH, CPPPATH=lastCPPPATH)
-#context.Result( ret )
-#return ret
 
 def check_char_bit(context):
 	context.Message('Checking whether target has an 8-bit character... ' )
