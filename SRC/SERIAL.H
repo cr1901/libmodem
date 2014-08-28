@@ -1,7 +1,10 @@
+#ifndef SERIAL_H
+#define SERIAL_H
+
 #include <stdint.h>
 
-#include "config.h"
-#include "usr_def.h"
+//#include "config.h"
+//#include "usr_def.h"
 
 /* The next routines send and receive data in the context of a 
  * MODEM session. 
@@ -29,9 +32,13 @@
 //extern uint16_t reset_timer(timer_handle_t t_port);
 //extern uint16_t stop_timer(timer_handle_t t_port);
 
+typedef void * serial_handle_t;
+
 /* Future- implement 7-bit support- described in ymodem.txt */
 extern uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr);
 extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, serial_handle_t port);
 extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, serial_handle_t port);
 extern uint16_t serial_close(serial_handle_t * port_addr);
 extern uint16_t serial_flush(serial_handle_t port_addr);
+#endif        //  #ifndef SERIAL_H
+

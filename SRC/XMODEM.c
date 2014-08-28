@@ -2,7 +2,7 @@
 #include "serial.h"
 #include "files.h"
 #include "modem.h"
-#include "config.h"
+//#include "config.h"
 //#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>

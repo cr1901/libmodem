@@ -1,6 +1,7 @@
+#include "serial.h"
 #include "modem.h"
-#include "config.h"
-#include "usr_def.h"
+//#include "config.h"
+//#include "usr_def.h"
 
 /* Do not use these! */
 //static void get_ymodem_filepath(char * fullpath, char * filename, uint8_t numchars);

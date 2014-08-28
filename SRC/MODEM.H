@@ -23,11 +23,15 @@
 #ifndef MODEM_H
 #define MODEM_H
 
-#include <stdio.h>
-#include <stdint.h>
-#include <time.h>
-#include "config.h"
-#include "usr_def.h"
+//#include <stdio.h>
+//#include <stdint.h>
+//#include <time.h>
+
+#include "files.h"
+#include "serial.h"
+#include "timewrap.h"
+//#include "config.h"
+//#include "usr_def.h"
 
 
 /*** Macros ***/
