@@ -3,7 +3,7 @@ EnsureSConsVersion(2, 2)
 
 #Read the variables, add them to the environment.
 print 'Reading settings.py to define current build'
-vars = Variables('settings.py')
+vars = Variables(['variables.cache', 'settings.py'])
 vars.Add(BoolVariable('DEBUG_MESSAGES', 'Set for debugging messages in SConscripts.', 0))
 vars.Add(EnumVariable('BUILD_TYPE', 'Set the build type for the current target', \
 	'Debug', allowed_values=('Debug', 'Release')))
@@ -17,6 +17,7 @@ vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '
 http://stackoverflow.com/questions/9744867/scons-how-to-add-a-new-command-line-variable-to-an-existing-construction-enviro"""
 
 env = Environment(variables = vars)
+vars.Save('variables.cache', env)
 Help(vars.GenerateHelpText(env))
 
 #According to SCons documentation (2.2.0), the user is free to override internal

@@ -111,6 +111,9 @@ typedef struct modem_status{
 	char * filename;	
 }MODEM_STATUS;
 
+typedef int (* O_channel)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
+typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, void * const chan_state);
+
 
 /* Global enums and status struct declarations */
 
@@ -183,6 +186,7 @@ typedef struct modem_status{
 (Possibly open serial port as well?) */
 //uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 //uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+
 MODEM_ERRORS xmodem_tx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
 MODEM_ERRORS xmodem_rx(modem_file_t * f_ptr, serial_handle_t device, uint8_t flags);
 MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
