@@ -150,7 +150,7 @@ int main(int argc, char * argv[])
 			trx_file = modem_fopen_write(filename);
 			if(trx_file != NULL)
 			{
-				status = xmodem_rx(trx_file, com_port, txrx_flags);
+				/* status = xmodem_rx(trx_file, com_port, txrx_flags); */
 				printf("Returned status code: %X", status);
 			}
 			else
@@ -164,7 +164,7 @@ int main(int argc, char * argv[])
 			trx_file = modem_fopen_read(filename);
 			if(trx_file != NULL)
 			{
-				status = xmodem_tx(trx_file, com_port, txrx_flags);
+				/* status = xmodem_tx(trx_file, com_port, txrx_flags); */
 				printf("Returned status code: %X", status);
 			}
 			else
