@@ -5,14 +5,15 @@
 //#include "config.h"
 //#include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <stddef.h> /* For size_t, NULL */
+//#include <stdint.h>
 #include <time.h>
 //#include <inttypes.h>
 
 static void clear_buffer(char * buf, size_t bufsiz);
 static void set_packet_offsets(char ** packet_offsets, char * packet, unsigned short mode);
 static void purge(serial_handle_t serial_device);
-static uint16_t wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
+static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
 //static void assemble_packet(XMODEM_OFFSETS * offsets, )
 //static void disassemble_packet()
 /* Implement this! */
@@ -38,15 +39,15 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
 	 * Additionally, one is probably not going to use XMODEM to transfer
 	 * 4G+ files... */
-	uint32_t current_offset = 0;
+	unsigned long current_offset = 0;
 	
-	uint16_t count, /* Loop variable. */ \
+	unsigned int count, /* Loop variable. */ \
 		status = 0, crc16 = 0;
 	
 	//uint16_t  bytes_written = 0, elapsed_time = 0, num_1k_xfer_failures = 0;
 			
 	/* Logic variables. */
-	uint8_t eof_detected = MODEM_FALSE, \
+	int eof_detected = MODEM_FALSE, \
 			using_128_blocks_in_1k = MODEM_FALSE;
 	
 	/* Check to see if EOF was reached using bytes_read */
@@ -174,12 +175,12 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 			case XMODEM:
 			/* Typecasting needed? */
 				*offsets[CHKSUM_CRC] = generate_chksum(offsets[DATA], \
-					(uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
+					(size_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
 				break;
 			/* All other protocols use CRC. */	
 			default:
 				crc16 = generate_crc(offsets[DATA], \
-					(uint16_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
+					(size_t) (offsets[CHKSUM_CRC] - offsets[DATA]));
 				/* Recall that CRC is 2 bytes, and so it needs to
 				 * be stored in the array of bytes. */
 				 
@@ -263,18 +264,18 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
 	 * Additionally, one is probably not going to use XMODEM to transfer
 	 * 4G+ files... */
-	uint32_t current_offset = 0;
+	unsigned long current_offset = 0;
 	
-	uint16_t count, /* Loop variable. */ \
+	unsigned int count, /* Loop variable. */ \
 		status = 0, error_count = 0; 
 	
 	//uint16_t elapsed_time = 0, crc16 = 0, chksum = 0;
 	
-	uint8_t expected_start_char_1 = 0, expected_start_char_2 = 0, \
+	unsigned char expected_start_char_1 = 0, expected_start_char_2 = 0, \
 			expected_block_no = 0, expected_comp_block_no = 0;
 	
 	/* Logic variables. */
-	uint8_t eot_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
+	int eot_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
 	
 	//uint8_t expected_rx_detected = MODEM_FALSE
 	
@@ -463,7 +464,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 			 * checksum error." */
 			else if((flags == XMODEM) && \
 				generate_chksum(offsets[DATA], \
-				(uint16_t) ((offsets[CHKSUM_CRC]) - offsets[DATA])) \
+				(size_t) ((offsets[CHKSUM_CRC]) - offsets[DATA])) \
 				!= *offsets[CHKSUM_CRC])
 			{
 				status = BAD_CRC_CHKSUM;	
@@ -471,7 +472,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 			
 			/* Ditto, except for CRC errors. */
 			else if((flags != XMODEM) && \
-				generate_crc(offsets[DATA], (uint16_t) (offsets[END] - offsets[DATA])) != 0)
+				generate_crc(offsets[DATA], (size_t) (offsets[END] - offsets[DATA])) != 0)
 			{
 				status = BAD_CRC_CHKSUM;
 			}
@@ -540,8 +541,8 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 
 unsigned char generate_chksum(char * data, size_t size)
 {
-	uint8_t chksum = 0;
-	register uint16_t count;
+	unsigned char chksum = 0;
+	register unsigned int count;
 	for(count = 0; count < size; count++)
 	{
 		chksum += *(data + count);
@@ -553,14 +554,14 @@ unsigned char generate_chksum(char * data, size_t size)
  * CRC value should be 0. */
 unsigned short generate_crc(char * data, size_t size)
 {
-	static const uint16_t crc_poly = 0x1021;
-	uint16_t crc = 0x0000;
+	static const unsigned int crc_poly = 0x1021;
+	unsigned int crc = 0x0000;
 	
-	register uint16_t octet_count;
-	register uint8_t  bit_count;
+	register unsigned int octet_count;
+	register unsigned char bit_count;
 	for(octet_count = 0; octet_count < size; octet_count++)
 	{
-		crc = (crc ^ (uint16_t) (data[octet_count] & (0xFF)) << 8);
+		crc = (crc ^ (unsigned int) (data[octet_count] & (0xFF)) << 8);
 		for(bit_count = 1; bit_count <= 8; bit_count++)
 		{
 			/* Taken from ymodem.txt/wikipedia... I don't have the patience
@@ -626,19 +627,19 @@ static void set_packet_offsets(char ** packet_offsets, char * packet, unsigned s
 
 static void purge(serial_handle_t serial_dev)
 {
-	uint16_t timeout_status = NO_ERRORS;
+	unsigned int timeout_status = NO_ERRORS;
 	char dummy_byte;
 	do{
 		timeout_status = serial_rcv(&dummy_byte, 1, 1, serial_dev);
 	}while(timeout_status != TIMEOUT);
 }
 
-static uint16_t wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
+static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
 {
 	time_t start,end;
-	uint16_t elapsed_time;
-	uint16_t status = NO_ERRORS;
-	uint8_t expected_rx_detected = MODEM_FALSE;
+	unsigned int elapsed_time;
+	int status = NO_ERRORS;
+	int expected_rx_detected = MODEM_FALSE;
 	char rx_code = NUL;
 	
 	/* Wait for NAK or 'C', timeout after 1 minute. */
