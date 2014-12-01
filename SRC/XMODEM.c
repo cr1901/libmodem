@@ -10,9 +10,9 @@
 //#include <inttypes.h>
 
 static void clear_buffer(unsigned char * buf, size_t bufsiz);
-static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, uint8_t mode);
+static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, unsigned short mode);
 static void purge(serial_handle_t serial_device);
-static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
+static uint16_t wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
 //static void assemble_packet(XMODEM_OFFSETS * offsets, )
 //static void disassemble_packet()
 /* Implement this! */
@@ -20,15 +20,16 @@ static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags);
 //static uint16_t modem_difftime()
 
 /** MODEM_RX- transmit file(s) to external equipment. **/
-MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void * chan_state, serial_handle_t serial_device, uint8_t flags)
+MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_state, \
+	serial_handle_t serial_device, unsigned short flags)
 {
 	/* Array of pointers to the six packet section offsets within the 
 	 * buffer holding the packet. */
-	unsigned char * offsets[6];
+	char * offsets[6];
 	
 	/* Buffer for the packet to be sent. */
 	/* static uint8_t tx_buffer[1034] = {NUL}; */
-	static uint8_t rx_code = NUL;
+	static char rx_code = NUL;
 	
 	/* May be better practice then using a single static global enum. */
 	//static OFFSET_NAMES names;
@@ -244,15 +245,16 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 }
 
 /** MODEM_RX- receive file(s) from external equipment. **/
-MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, serial_handle_t serial_device, uint8_t flags)
+MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_state, \
+	serial_handle_t serial_device, unsigned short flags)
 {
 	/* Array of pointers to the six packet section offsets within the 
 	 * buffer holding the packet. */
-	unsigned char * offsets[6];
+	char * offsets[6];
 	
 	/* Buffer for the packet to be received. */
 	/* static uint8_t rx_buffer[1034] = {NUL}; */
-	static uint8_t tx_code = NUL;
+	static char tx_code = NUL;
 	
 	/* May be better practice then using a single static global enum. */
 	//static OFFSET_NAMES names;
@@ -589,7 +591,7 @@ static void clear_buffer(unsigned char * buf, size_t bufsiz)
 }
 
 
-static void set_packet_offsets(uint8_t ** packet_offsets, uint8_t * packet, uint8_t mode)
+static void set_packet_offsets(uint8_t ** packet_offsets, uint8_t * packet, unsigned short mode)
 {
 	//int START_CHAR = 0; Not causing error- why?
 	packet_offsets[START_CHAR] = packet;
@@ -631,7 +633,7 @@ static void purge(serial_handle_t serial_dev)
 	}while(timeout_status != TIMEOUT);
 }
 
-static uint16_t wait_for_rx_ready(serial_handle_t serial_device, uint8_t flags)
+static uint16_t wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
 {
 	time_t start,end;
 	uint16_t elapsed_time;

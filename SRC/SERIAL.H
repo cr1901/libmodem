@@ -1,8 +1,6 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-#include <stdint.h>
-
 //#include "config.h"
 //#include "usr_def.h"
 
@@ -35,10 +33,10 @@
 typedef void * serial_handle_t;
 
 /* Future- implement 7-bit support- described in ymodem.txt */
-extern uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr);
-extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, serial_handle_t port);
-extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, serial_handle_t port);
-extern uint16_t serial_close(serial_handle_t * port_addr);
-extern uint16_t serial_flush(serial_handle_t port_addr);
+extern int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr);
+extern int serial_snd(char * data, unsigned int num_bytes, serial_handle_t port);
+extern int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t port);
+extern int serial_close(serial_handle_t * port_addr);
+extern int serial_flush(serial_handle_t port_addr);
 #endif        //  #ifndef SERIAL_H
 

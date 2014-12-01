@@ -181,7 +181,7 @@ uint16_t serial_close(serial_handle_t * port_addr)
 	}
 }
 
-uint16_t serial_flush(serial_handle_t port_addr)
+int serial_flush(serial_handle_t port_addr)
 {
 	if(FlushFileBuffers(port_addr))
 	{
