@@ -1,4 +1,7 @@
 *.*~
+.sconf_temp/
+.sconsign.dblite
+*.err
+variables.cache
 INSTRUCTIONS.txt
 MODEM.zip
-TEST/

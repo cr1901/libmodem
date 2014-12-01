@@ -39,6 +39,7 @@ env.Append(CPPPATH = '.') #See pitfalls for rationale.
 build_dir = Dir('BUILD/' + env['TARGET_OS'])
 env = SConscript(['TARGETS/SConscript'], exports = ['env'])
 SConscript(['SRC/SConscript'], exports = ['env'], variant_dir = build_dir, duplicate=0)
+SConscript(['TEST/SConscript'], exports = ['env', 'build_dir'], variant_dir = build_dir.Dir('TEST'), duplicate=0)
 
 #http://www.knowthytools.com/2009/05/scons-cleaning-variantdir.html
 #Clean('.', 'BIN/' + env['TARGET_OS'])

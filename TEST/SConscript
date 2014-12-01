@@ -1,0 +1,8 @@
+Import('env', 'build_dir')
+
+# Build one or more test runners.
+unittest = env.Program('unittest.c', LIBS='modem', LIBPATH=build_dir)
+# Depend on the runner to ensure that it's built before running it - Note: using abspath.
+test_alias = Alias('test', [unittest], unittest[0].abspath)
+# Simply required.  Without it, 'test' is never considered out of date.
+AlwaysBuild(test_alias)

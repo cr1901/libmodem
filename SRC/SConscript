@@ -40,7 +40,8 @@ if env['TARGET_OS'] == 'DOS':
 			
 	
 #print env.Dump('LINKCOM')
-core_src_files = Split('TRXCOM.c  XMODEM.c YMODEM.c')
+xfer_exe_src = Split('TRXCOM.c')
+core_platform_independent = Split('XMODEM.c YMODEM.c')
 core_platform_dependent = Split('SERIAL.c')
 core_platform_dependent = [Dir(env['TARGET_OS']).File(src) for src in core_platform_dependent]
 #env.Object(core_src_files)
@@ -52,7 +53,8 @@ env.AppendUnique(CPPPATH = ['#'])
 #I've seen both: http://goo.gl/wQaKTc
 #env.Object(core_platform_dependent)
 
-core_exe = env.Program('TRXCOM', core_src_files + core_platform_dependent)
+core_lib = env.Library('modem', core_platform_independent + core_platform_dependent)
+#core_exe = env.Program('TRXCOM', core_src_files + core_platform_dependent)
 
 #Now build the platform-dependent files (if any)...
 
@@ -60,7 +62,8 @@ core_exe = env.Program('TRXCOM', core_src_files + core_platform_dependent)
 
 #Install if the host OS matches target OS
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
-	env.Install(env['HOST_INSTALL_DIR'], core_exe)
+	#env.Install(env['HOST_INSTALL_DIR'], core_exe)
+	pass
 else:
 	pass
 	#env.Xfer('dummy', 'TRXCOM')
