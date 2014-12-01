@@ -128,7 +128,9 @@ directory. */
 	
 	int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t port)
 	{
-		/* Guard against signed overflow. A timeout < 0 will be set to 0. */
+		/* Guard against signed overflow in either direction when converting
+		to ticks. Additionally, the DOS library may not handle negative 
+		timeouts well. A timeout < 0 will be set to 0. */
 		unsigned int timeout_ticks;
 		int prev_timeout;
 		

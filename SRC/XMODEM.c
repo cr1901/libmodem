@@ -9,8 +9,8 @@
 #include <time.h>
 //#include <inttypes.h>
 
-static void clear_buffer(unsigned char * buf, size_t bufsiz);
-static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, unsigned short mode);
+static void clear_buffer(char * buf, size_t bufsiz);
+static void set_packet_offsets(char ** packet_offsets, char * packet, unsigned short mode);
 static void purge(serial_handle_t serial_device);
 static uint16_t wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
 //static void assemble_packet(XMODEM_OFFSETS * offsets, )
@@ -86,7 +86,7 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 		*offsets[START_CHAR] = SOH;
 	}
 	*offsets[BLOCK_NO] = 0x01;
-	*offsets[COMP_BLOCK_NO] = 0xFE;
+	*offsets[COMP_BLOCK_NO] = (char) 0xFE;
 	
 	rx_code = NUL;
 	do{
@@ -538,7 +538,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 }
 
 
-uint8_t generate_chksum(uint8_t * data, uint16_t size)
+unsigned char generate_chksum(char * data, size_t size)
 {
 	uint8_t chksum = 0;
 	register uint16_t count;
@@ -551,7 +551,7 @@ uint8_t generate_chksum(uint8_t * data, uint16_t size)
 
 /* Use CRC-16-CCITT. XMODEM sends MSB first, so initial
  * CRC value should be 0. */
-uint16_t generate_crc(uint8_t * data, uint16_t size)
+unsigned short generate_crc(char * data, size_t size)
 {
 	static const uint16_t crc_poly = 0x1021;
 	uint16_t crc = 0x0000;
@@ -581,7 +581,7 @@ uint16_t generate_crc(uint8_t * data, uint16_t size)
 
 /** Static functions. **/
 /* Yes, memset would work, but do not depend on existence of string.h */
-static void clear_buffer(unsigned char * buf, size_t bufsiz)
+static void clear_buffer(char * buf, size_t bufsiz)
 {
 	size_t count;
 	for(count = 0; count < bufsiz; count++)
@@ -591,7 +591,7 @@ static void clear_buffer(unsigned char * buf, size_t bufsiz)
 }
 
 
-static void set_packet_offsets(uint8_t ** packet_offsets, uint8_t * packet, unsigned short mode)
+static void set_packet_offsets(char ** packet_offsets, char * packet, unsigned short mode)
 {
 	//int START_CHAR = 0; Not causing error- why?
 	packet_offsets[START_CHAR] = packet;
@@ -627,7 +627,7 @@ static void set_packet_offsets(uint8_t ** packet_offsets, uint8_t * packet, unsi
 static void purge(serial_handle_t serial_dev)
 {
 	uint16_t timeout_status = NO_ERRORS;
-	uint8_t dummy_byte;
+	char dummy_byte;
 	do{
 		timeout_status = serial_rcv(&dummy_byte, 1, 1, serial_dev);
 	}while(timeout_status != TIMEOUT);
@@ -639,7 +639,7 @@ static uint16_t wait_for_rx_ready(serial_handle_t serial_device, unsigned short 
 	uint16_t elapsed_time;
 	uint16_t status = NO_ERRORS;
 	uint8_t expected_rx_detected = MODEM_FALSE;
-	uint8_t rx_code = NUL;
+	char rx_code = NUL;
 	
 	/* Wait for NAK or 'C', timeout after 1 minute. */
 	time(&start);

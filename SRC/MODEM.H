@@ -111,8 +111,8 @@ typedef struct modem_status{
 	char * filename;	
 }MODEM_STATUS;
 
-typedef int (* O_channel)(unsigned char * buf, const int request_size, const int last_sent_size, void * const chan_state);
-typedef int (* I_channel)(const unsigned char * buf, const int buf_size, const int eof, void * const chan_state);
+typedef int (* O_channel)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
+typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, void * const chan_state);
 
 
 /* Global enums and status struct declarations */
@@ -201,8 +201,8 @@ return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards
 xmodem_tx, xmodem_rx, ymodem_tx, ymodem_rx, etc... */
 
 /* Change data sizes all to uint32_t? */
-uint8_t generate_chksum(uint8_t * data, uint16_t size);
-uint16_t generate_crc(uint8_t * data, uint16_t size);
+unsigned char generate_chksum(char * data, size_t size);
+unsigned short generate_crc(char * data, size_t size);
 
 
 /* If using asynchronous I/O (interrupt-driven), use an idle function to

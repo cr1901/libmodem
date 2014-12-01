@@ -7,8 +7,6 @@
 //#include "usr_def.h"
 #include "files.h"
 #include "serial.h"
-#include <stdint.h>
-#include <stdlib.h>
 
 
 /** Begin Windows defines... **/
@@ -21,11 +19,11 @@
 
 
 #include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdio.h> /* For sprintf. Since we're on windows, we should use it. */
+#include <stddef.h> /* For NULL. */
 
 //void windows_error(char *);
-uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port_addr)
+int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr)
 {
 	char com_string[12] = "\\\\.\\COM\0\0\0\0";
 	DCB dcbSerialParams;
@@ -96,11 +94,13 @@ uint16_t serial_init(uint8_t port_no, uint32_t baud_rate, serial_handle_t * port
 	}
 }
 
-extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, /* uint8_t timeout, */ serial_handle_t port)
+int serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
 {
 	DWORD dwBytesWritten = 0;
 	
-	if(WriteFile(port, (char *) data, (DWORD) num_bytes, &dwBytesWritten, NULL))
+	/* No INT_MAX check necessary- num_bytes will fit into DWORD always. */
+	
+	if(WriteFile(port, data, (DWORD) num_bytes, &dwBytesWritten, NULL))
 	{
 		return NO_ERRORS;
 	}
@@ -110,13 +110,26 @@ extern uint16_t serial_snd(uint8_t * data, uint16_t num_bytes, /* uint8_t timeou
 	}
 }
 
-extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, serial_handle_t port)
+int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t port)
 {	
+	DWORD timeout_ticks;
 	DWORD dwBytesRead = 0;
 	COMMTIMEOUTS prev_timeouts;
 	COMMTIMEOUTS curr_timeouts;
 	
 	//printf("Time left in timeout: %d\n", timeout);
+	
+	/* Guard against negative values being converted to ridiculous timeouts. 
+	A timeout < 0 will be set to 0. */
+	/* All values of num_bytes and 1000*timeout can be represented in a DWORD
+	which windows expects, so no INT_MAX check is necessary. */
+	if(timeout < 0)
+	{
+		timeout = 0;
+	}
+	
+	/* Protect against signed overflow by casting timeout to DWORD. */
+	timeout_ticks = 1000uL * timeout;
 	
 	/* Timeout measured in milliseconds */
 	if(!GetCommTimeouts(port, &prev_timeouts))
@@ -126,18 +139,18 @@ extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, 
 	}
 	
 	curr_timeouts = prev_timeouts;
-	curr_timeouts.ReadIntervalTimeout        = 1000 * timeout; 
-	curr_timeouts.ReadTotalTimeoutMultiplier    = 0;
-	curr_timeouts.ReadTotalTimeoutConstant    = 1000 * timeout;
-	curr_timeouts.WriteTotalTimeoutMultiplier    = 10;
-	curr_timeouts.WriteTotalTimeoutConstant    = 50;
+	curr_timeouts.ReadIntervalTimeout = timeout_ticks; 
+	curr_timeouts.ReadTotalTimeoutMultiplier = 0;
+	curr_timeouts.ReadTotalTimeoutConstant = timeout_ticks;
+	curr_timeouts.WriteTotalTimeoutMultiplier = 10;
+	curr_timeouts.WriteTotalTimeoutConstant = 50;
 	
 	if(!SetCommTimeouts(port, &curr_timeouts))
 	{
 		return SERIAL_ERROR;
 	}
 
-	if(ReadFile((HANDLE) port, (char *) data, (DWORD) num_bytes, &dwBytesRead, NULL))
+	if(ReadFile((HANDLE) port, data, (DWORD) num_bytes, &dwBytesRead, NULL))
 	{
 		/* If no error occurred, check to see that all bytes requested
 		 * were received... if not, this is considered a timeout. */
@@ -166,7 +179,7 @@ extern uint16_t serial_rcv(uint8_t * data, uint16_t num_bytes, uint8_t timeout, 
 	} */
 }
 
-uint16_t serial_close(serial_handle_t * port_addr)
+int serial_close(serial_handle_t * port_addr)
 {
 	/* Both the flush and close must succeed to return
 	 * without error. */
