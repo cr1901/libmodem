@@ -23,15 +23,15 @@
 #ifndef MODEM_H
 #define MODEM_H
 
-//#include <stdio.h>
-//#include <stdint.h>
-//#include <time.h>
+/* #include <stdio.h>
+#include <stdint.h>
+#include <time.h> */
 
 #include "files.h"
 #include "serial.h"
 #include "timewrap.h"
-//#include "config.h"
-//#include "usr_def.h"
+/* #include "config.h"
+#include "usr_def.h" */
 
 
 /*** Macros ***/
@@ -114,61 +114,6 @@ typedef struct modem_status{
 typedef int (* O_channel)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
 typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, void * const chan_state);
 
-
-/* Global enums and status struct declarations */
-
-/* Declare in functions which need it. Look up purpose of passing enums. */
-//MODEM_ERRORS current_error;
-//MODEM_STATUS current_status;
-//XFER_MODES current_mode;
-
-/* Fallback refers to downgrading from XMODEM-1K to XMODEM-CRC, which
- * may not be standard. Additionally, a distinction is made between
- * XMODEM-CRC and XMODEM-1K with 128-byte packets, though they are
- * effectively transfer the same bytes for a given packet. */
- 
- 
- /* * Removed to make protocol receiver-driven. Distinction between
- * XMODEM-1K with 128 packets and XMODEM-CRC is still made- W. Jones. */
-//#define FALLBACK BIT(3)
-
-
-
-/* Currently, ignore contradictions in the code when reading this section.
- * I just haven't taken the time to implement the return values yet!
- * - W. Jones */
-
-/* Serial status codes */
-//#define TIMEOUT BIT(7)
-/* Use SERIAL_ERROR for any other situation besides timeout.
- * However, if a function is capable of timing out (rcv), return 
- * TIMEOUT on error. */
-//#define SERIAL_ERROR BIT(6)
-
-/* May not be useful... */
-//#define ASYNC_XFER_INCOMPLETE BIT(5)
-
-/* Critical Errors */
-//#define FILE_ERROR BIT(4)
-//#define PACKET_MISMATCH BIT(3)
-//#define UNDEFINED_ERROR BIT(2)
-
-/* Recoverable Errors */
-
-/* Xfer status codes */
-
-//#define SENT_NAK BIT(1)
-
-
-
-//#define BAD_CRC_CHKSUM BIT(0)
-//#define NO_ERRORS 0x00
-
-/* XMODEM 7 should go here as well. */
-
-/* Add YMODEM/ZMODEM/Kermit later. */
-
-
 /*** Function prototypes. ***/
 /* Can async/sync tx/rx use the same function with the same return
  * values (nonzero on error vs. specific flags)? */
@@ -180,21 +125,21 @@ typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, v
   
   /* Check timeout- TIMER INTERRUPT required... how to handle referencing variables? 
    * Start timer, exec rcv... if no error, stop/reset timer, else loop (if timeout by end, break). */
-//session_function(parameters);
+/* session_function(parameters); */
 
 /* Wrapper function for all possible xfer modes (wrapper.c). 
 (Possibly open serial port as well?) */
-//uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+/* uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
 
 MODEM_ERRORS xmodem_tx(O_channel data_out, char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
 MODEM_ERRORS xmodem_rx(I_channel data_in, char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
 MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t zmodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t kermit_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-//uint16_t kermit_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+/* uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+uint16_t zmodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+uint16_t kermit_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+uint16_t kermit_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
 
 /* xmodem_tx, xmodem_rx, xmodem_crc_tx, etc... or
 return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards 
@@ -211,7 +156,7 @@ unsigned short generate_crc(char * data, size_t size);
  * mechanisms).
  * Also includes an error handler 
  * Examples... update a status bar/report errors using stdout. */
-extern void idle(MODEM_STATUS curr_status);
-extern void error_handler(MODEM_STATUS curr_status);
+/* extern void idle(MODEM_STATUS curr_status);
+extern void error_handler(MODEM_STATUS curr_status); */
 
 #endif

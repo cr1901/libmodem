@@ -1,8 +1,8 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-//#include "config.h"
-//#include "usr_def.h"
+/* #include "config.h"
+#include "usr_def.h" */
 
 /* The next routines send and receive data in the context of a 
  * MODEM session. 
@@ -24,11 +24,11 @@
  *    (value at initialization not considered). */
 
 /* THANK GOD FOR <time.h>! */
-//extern uint16_t check_timer(timer_handle_t t_port);
-//extern timer_handle_t init_timer(void);
-//extern start_timer(timer_handle_t t_port); 
-//extern uint16_t reset_timer(timer_handle_t t_port);
-//extern uint16_t stop_timer(timer_handle_t t_port);
+/* extern uint16_t check_timer(timer_handle_t t_port);
+extern timer_handle_t init_timer(void);
+extern start_timer(timer_handle_t t_port); 
+extern uint16_t reset_timer(timer_handle_t t_port);
+extern uint16_t stop_timer(timer_handle_t t_port); */
 
 typedef void * serial_handle_t;
 
@@ -38,5 +38,5 @@ extern int serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
 extern int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t port);
 extern int serial_close(serial_handle_t * port_addr);
 extern int serial_flush(serial_handle_t port_addr);
-#endif        //  #ifndef SERIAL_H
+#endif        /*  #ifndef SERIAL_H  */
 

@@ -3,8 +3,8 @@
   * from <stdint.h> as much as possible. */
 
 #include "modem.h"
-//#include "config.h"
-//#include "usr_def.h"
+/* #include "config.h"
+#include "usr_def.h" */
 #include "files.h"
 #include "serial.h"
 
@@ -22,7 +22,7 @@
 #include <stdio.h> /* For sprintf. Since we're on windows, we should use it. */
 #include <stddef.h> /* For NULL. */
 
-//void windows_error(char *);
+/* void windows_error(char *); */
 int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr)
 {
 	char com_string[12] = "\\\\.\\COM\0\0\0\0";
@@ -54,7 +54,7 @@ int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t
 	/* Using real values instead of CBR_BAUD_RATE for simplicity.
 	* Allowed according to MSDN:
 	* http://msdn.microsoft.com/en-us/library/windows/desktop/aa363214(v=vs.85).aspx */
-	//printf("Baud rate: %lu\n", baud_rate);
+	/* printf("Baud rate: %lu\n", baud_rate); */
 	
 	dcbSerialParams.BaudRate=baud_rate;
 	dcbSerialParams.ByteSize=8;
@@ -117,7 +117,7 @@ int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t
 	COMMTIMEOUTS prev_timeouts;
 	COMMTIMEOUTS curr_timeouts;
 	
-	//printf("Time left in timeout: %d\n", timeout);
+	/* printf("Time left in timeout: %d\n", timeout); */
 	
 	/* Guard against negative values being converted to ridiculous timeouts. 
 	A timeout < 0 will be set to 0. */
@@ -134,7 +134,7 @@ int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t
 	/* Timeout measured in milliseconds */
 	if(!GetCommTimeouts(port, &prev_timeouts))
 	{
-		//windows_error("serial_rcv_1()");	
+		/* windows_error("serial_rcv_1()"); */	
 		return SERIAL_ERROR;
 	}
 	

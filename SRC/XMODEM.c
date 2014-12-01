@@ -2,23 +2,22 @@
 #include "serial.h"
 #include "files.h"
 #include "modem.h"
-//#include "config.h"
-//#include <stdlib.h>
+
+/* #include "config.h"
+#include <stdlib.h> */
+
 #include <stdio.h>
 #include <stddef.h> /* For size_t, NULL */
-//#include <stdint.h>
 #include <time.h>
-//#include <inttypes.h>
 
 static void clear_buffer(char * buf, size_t bufsiz);
 static void set_packet_offsets(char ** packet_offsets, char * packet, unsigned short mode);
 static void purge(serial_handle_t serial_device);
 static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
-//static void assemble_packet(XMODEM_OFFSETS * offsets, )
-//static void disassemble_packet()
+/* static void assemble_packet(XMODEM_OFFSETS * offsets, )
+static void disassemble_packet() */
 /* Implement this! */
 
-//static uint16_t modem_difftime()
 
 /** MODEM_RX- transmit file(s) to external equipment. **/
 MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_state, \
@@ -33,7 +32,6 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 	static char rx_code = NUL;
 	
 	/* May be better practice then using a single static global enum. */
-	//static OFFSET_NAMES names;
 	
 	/* fseek(SEEK_CUR) may not be portable, as described here:
 	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
@@ -43,8 +41,6 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 	
 	unsigned int count, /* Loop variable. */ \
 		status = 0, crc16 = 0;
-	
-	//uint16_t  bytes_written = 0, elapsed_time = 0, num_1k_xfer_failures = 0;
 			
 	/* Logic variables. */
 	int eof_detected = MODEM_FALSE, \
@@ -167,7 +163,6 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 		{
 			/* In the case the EOF was not detected */
 		}
-		//else if(set_packet_offsets(&offsets, tx_buffer, flags);
 
 
 		switch(flags)
@@ -191,20 +186,19 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, char * tx_buffer, void * chan_sta
 				*(offsets[CHKSUM_CRC] + 1) = ((crc16 & (0x00FF)));
 		}
 		
-		//printf("Packet_size: %d\n", (offsets[END] - offsets[START_CHAR]));
+		/* printf("Packet_size: %d\n", (offsets[END] - offsets[START_CHAR])); */
 		serial_snd(tx_buffer, (offsets[END] - offsets[START_CHAR]), serial_device);
 		serial_flush(serial_device);
-		//flush the buffer
 		
 		/* Wait for any character. */
 		do{
 			status = serial_rcv(&rx_code, 1, 60, serial_device);
-			//printf("Char detected:\t%X\n", rx_code);
+			/* printf("Char detected:\t%X\n", rx_code); */
 
-			if(rx_code == NAK) //FIX!
+			if(rx_code == NAK) /* FIX! */
 			{
 				status = SENT_NAK;
-				//printf("NAK detected\n");
+				/* printf("NAK detected\n"); */
 				/* modem_fseek(f_ptr, current_offset); */
 				last_sent_size = 0;
 				/* If NAK detected on last packet, it needs to
@@ -258,7 +252,6 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 	static char tx_code = NUL;
 	
 	/* May be better practice then using a single static global enum. */
-	//static OFFSET_NAMES names;
 	
 	/* fseek(SEEK_CUR) may not be portable, as described here:
 	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
@@ -269,21 +262,16 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 	unsigned int count, /* Loop variable. */ \
 		status = 0, error_count = 0; 
 	
-	//uint16_t elapsed_time = 0, crc16 = 0, chksum = 0;
-	
 	unsigned char expected_start_char_1 = 0, expected_start_char_2 = 0, \
 			expected_block_no = 0, expected_comp_block_no = 0;
 	
 	/* Logic variables. */
 	int eot_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
 	
-	//uint8_t expected_rx_detected = MODEM_FALSE
-	
 	/* Check to see if EOF was reached using bytes_read */
 	size_t bytes_written;
 	
 	int in_bufsiz;
-	//time_t start,end;
 	
 	/* This function combines all X/Y modem functionality... any
 	 * protocol-specific statements are marked in if-else
@@ -294,7 +282,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 	set_packet_offsets(offsets, rx_buffer, flags);
 	
 	
-	//modem_fseek(f_ptr, 0);
+	/* modem_fseek(f_ptr, 0); */
 	
 	/* Set initial transmission code and expected response. */
 	if(flags == XMODEM_1K)
@@ -330,7 +318,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 		
 		while(MODEM_TRUE)
 		{
-		//do{
+		/*do{ */
 			error_count++; 
 			if(error_count > 11)
 			{
@@ -364,8 +352,8 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 			
 			if(status == TIMEOUT)
 			{
-				//debug-printf eventually?
-				//printf("Timeout occurred.\n");
+				/* debug-printf eventually?
+				printf("Timeout occurred.\n"); */
 				serial_snd(&tx_code, 1, serial_device);
 			}
 			
@@ -455,7 +443,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 				/* Look up YMODEM.txt to determine how the receiver
 				handles receiving the previous packet again. */
 				
-				//printf("Packet Mismatch\n", chksum);
+				/* printf("Packet Mismatch\n", chksum); */
 				status = PACKET_MISMATCH;
 			}
 			
@@ -477,7 +465,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 				status = BAD_CRC_CHKSUM;
 			}
 			
-			//printf("Current Status Code: %X\n", status);	
+			/* printf("Current Status Code: %X\n", status); */	
 			switch(status)
 			{
 				case BAD_CRC_CHKSUM:
@@ -495,7 +483,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, char * rx_buffer, void * chan_stat
 					expected_comp_block_no = ~(++expected_block_no);
 					/* bytes_written = modem_fwrite(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), f_ptr); */
 					bytes_written = data_in_fcn(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), eot_detected, chan_state);
-					//printf("Number bytes written: %d\n", bytes_written);
+					/* printf("Number bytes written: %d\n", bytes_written); */
 					if(bytes_written < (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]))
 					{
 						tx_code = CAN;
@@ -594,7 +582,7 @@ static void clear_buffer(char * buf, size_t bufsiz)
 
 static void set_packet_offsets(char ** packet_offsets, char * packet, unsigned short mode)
 {
-	//int START_CHAR = 0; Not causing error- why?
+	/* int START_CHAR = 0; Not causing error- why? */
 	packet_offsets[START_CHAR] = packet;
 	packet_offsets[BLOCK_NO] = packet + 1;
 	packet_offsets[COMP_BLOCK_NO] = packet + 2;
@@ -649,7 +637,7 @@ static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags
 		time(&end);
 		elapsed_time = modem_difftime(end, start);	
 		status = serial_rcv(&rx_code, 1, 60 - elapsed_time, serial_device);
-		//printf("Char detected:\t%X\n", rx_code);
+		/* printf("Char detected:\t%X\n", rx_code); */
 		
 
 		/* What happens if error on setting timeouts? */
