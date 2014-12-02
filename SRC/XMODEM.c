@@ -52,31 +52,20 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		return status;
 	}
 	
-	
 	/* Depending on mode set, set offsets. */	
 	set_packet_offsets(offsets, tx_buffer, flags);
-	
 	clear_buffer(tx_buffer, (offsets[END] - offsets[START_CHAR]+ 1));
-	/* modem_fseek(f_ptr, 0); */
 	
-	
-	if(flags == XMODEM_1K)
-	{
-		*offsets[START_CHAR] = STX;
-	}
-	else
-	{
-		*offsets[START_CHAR] = SOH;
-	}
+	*offsets[START_CHAR] = (flags == XMODEM_1K) ? STX : SOH;
 	*offsets[BLOCK_NO] = 0x01;
 	*offsets[COMP_BLOCK_NO] = 0xFE;
 	block_size = (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]);
-	
-	
 	rx_code = NUL;
+	
 	do{
 		int short_read;
 		
+		/* Read data from IO channel. */
 		bytes_read = data_out_fcn((char *) offsets[DATA], block_size, \
 			last_sent_size, chan_state);
 		short_read = (bytes_read < block_size);
@@ -85,26 +74,15 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		 * an 128 byte to reduce overhead. */
 		if((flags == XMODEM_1K) && !using_128_blocks_in_1k && short_read)
 		{
-			/* Todo: Add logic to check is feof encountered.- W. Jones */
-			
 			/* Does not alter flags byte to distinguish XMODEM_CRC
 			 * and XMODEM_1K with 128-byte packets. */
 			set_packet_offsets(offsets, tx_buffer, XMODEM_CRC);
 			*offsets[START_CHAR] = SOH;
 			using_128_blocks_in_1k = MODEM_TRUE;
-			block_size = (offsets[CHKSUM_CRC] - offsets[DATA]);
-			
-			/* If 128 bytes or more remain, feof() needs to be cleared, 
-			and the file pointer reposition. current_offset
-			will point to this same location on the next loop iteration. */
-			if(bytes_read >= 128)
-			{
-				last_sent_size = block_size;
-				/* modem_fseek(f_ptr, current_offset + 128); */
-			}
+			last_sent_size = block_size = (offsets[CHKSUM_CRC] - offsets[DATA]);
 		}
 		
-		/* This also handles the case where the file
+		/* Pad a short packet. This also handles the case where the file
 		 * ends on a packet-size boundary (write CPMEOF for entire packet). */
 		if(short_read)
 		{
@@ -116,79 +94,81 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 				*(offsets[DATA] + bytes_read + count) = CPMEOF;
 			}
 		}
-
-
-		switch(flags)
+		
+		/* Generate the checksum/CRC. */
+		if(flags == XMODEM)
+		{
+			*offsets[CHKSUM_CRC] = generate_chksum(offsets[DATA], \
+					block_size);	
+		}
+		else /* All other protocols use CRC. */
 		{
 			unsigned int crc16;
-			case XMODEM:
-			/* Typecasting needed? */
-				*offsets[CHKSUM_CRC] = generate_chksum(offsets[DATA], \
-					block_size);
-				break;
-			/* All other protocols use CRC. */	
-			default:
-				crc16 = generate_crc(offsets[DATA], block_size);
-				/* Recall that CRC is 2 bytes, and so it needs to
-				 * be stored in the array of bytes. */
-				
-				/* if sizeof(int) == 2, then 0xFF00 is unsigned int.
-				if sizeof(int) > 2, then 0xFF00 is int.
-				However the value ALWAYS remains positive. */
-				*(offsets[CHKSUM_CRC]) = ((crc16 & (0xFF00)) >> 8);
-				*(offsets[CHKSUM_CRC] + 1) = ((crc16 & (0x00FF)));
+			crc16 = generate_crc(offsets[DATA], block_size);
+			
+			/* if sizeof(int) == 2, then 0xFF00 is unsigned int.
+			if sizeof(int) > 2, then 0xFF00 is int.
+			However the value ALWAYS remains positive. */
+			*(offsets[CHKSUM_CRC]) = ((crc16 & (0xFF00)) >> 8);
+			*(offsets[CHKSUM_CRC] + 1) = ((crc16 & (0x00FF)));
 		}
 		
-		/* printf("Packet_size: %d\n", (offsets[END] - offsets[START_CHAR])); */
+		/* Send the packet. */
 		serial_snd((char *) tx_buffer, block_size, serial_device);
 		serial_flush(serial_device);
 		
 		/* Wait for any character. */
-		do{
-			status = serial_rcv(&rx_code, 1, 60, serial_device);
-			/* printf("Char detected:\t%X\n", rx_code); */
-
-			if(rx_code == NAK) /* FIX! */
-			{
-				status = SENT_NAK;
-				/* printf("NAK detected\n"); */
-				/* modem_fseek(f_ptr, current_offset); */
-				last_sent_size = 0;
-				/* If NAK detected on last packet, it needs to
-				 * be redone! */
-				eof_detected = MODEM_FALSE;
-			}
-			else if(rx_code == CAN)
-			{
-				return SENT_CAN;
-			}
-			else if(rx_code == ACK)
-			{
-				/* Increment the block number and negate the complement block number in one line. */
-				(* offsets[COMP_BLOCK_NO]) = ~(++(* offsets[BLOCK_NO]));
-				last_sent_size = (offsets[CHKSUM_CRC] - offsets[DATA]);
-			}
-			#ifdef DISPLAY_MESSAGES
-				/* printf("%lu bytes sent...\r", current_offset); */
-				/* This will display the buffer each line, instead
-				of each block. */
-				/* fflush(stdout); */
-			#endif	
-		}while(!(rx_code == ACK || rx_code == NAK));
+		status = serial_rcv(&rx_code, 1, 60, serial_device);
+		
+		/* Protocol is completely receiver-driven (will not retransmit
+		automatically without receiver intervention)- bail on timeout
+		or hardware error. */
+		/* All four conditions are mutually exclusive. */
+		if(status != NO_ERRORS)
+		{
+			return status;
+                }
+                else if(rx_code == ACK)
+		{
+			/* Increment the block number and negate the 
+			complement block number in one line. */
+			(* offsets[COMP_BLOCK_NO]) = ~(++(* offsets[BLOCK_NO]));
+			last_sent_size = block_size;
+		}
+                else if(rx_code == CAN)
+		{
+			return SENT_CAN;
+		}
+		else /* if(rx_code == NAK) */
+		{
+			/* Garbage. Resend. */
+			/* FIX! */
+			last_sent_size = 0;
+			/* If NAK detected on last packet, it needs to
+			 * be redone! */
+			eof_detected = MODEM_FALSE;
+		}
 	}while(!eof_detected);
 	
 	
-	/* Wait for ACK or CAN. */
-	tx_buffer[START_CHAR] = EOT;
+	/* Wait for ACK or CAN. Is waiting for CAN really necessary? It
+	could probably fit under "timeout", as the receiver has acknowledged
+	all data to be sent at this point. */
 	do{
 		char eot_char = EOT;
 		
 		serial_snd(&eot_char, 1, serial_device);
 		status = serial_rcv(&rx_code, 1, 60, serial_device);
-	}while(!(rx_code == ACK || rx_code == CAN));
+	}while(status == NO_ERRORS && !(rx_code == ACK || rx_code == CAN));
 	
-	/* Add logic to incorporate status code on last packet later... */
-	return rx_code == ACK ? NO_ERRORS : SENT_CAN;
+	if(status != NO_ERRORS)
+	{
+		return status;
+	}
+	else
+	{
+		return (rx_code == ACK) ? NO_ERRORS : SENT_CAN;
+	}
 }
 
 /** MODEM_RX- receive file(s) from external equipment. **/
@@ -279,7 +259,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			
 			/* Fallback to XMODEM from XMODEM_CRC if conditions
 			 * are met. */
-			if(error_count > 2 && flags == XMODEM_CRC)
+			if(flags == XMODEM_CRC && error_count > 2)
 			{
 				flags = XMODEM;
 				tx_code = NAK;
@@ -617,3 +597,9 @@ static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags
 	return status;
 }
 
+static int wait_for_rx_ack(serial_handle_t serial_device)
+{
+	char rx_code;
+	
+	
+}

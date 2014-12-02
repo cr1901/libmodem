@@ -32,6 +32,13 @@ extern uint16_t stop_timer(timer_handle_t t_port); */
 
 typedef void * serial_handle_t;
 
+typedef enum serial_status
+{
+	SERIAL_OK,
+	SERIAL_TIMEOUT,
+	SERIAL_HW_ERROR
+}SERIAL_STATUS;
+
 /* Future- implement 7-bit support- described in ymodem.txt */
 extern int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr);
 extern int serial_snd(char * data, unsigned int num_bytes, serial_handle_t port);
