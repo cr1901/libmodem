@@ -77,7 +77,7 @@ typedef enum offset_names
 
 /** Receive/Send status codes. **/
 typedef enum modem_errors{
-	NO_ERRORS = 0,
+	MODEM_NO_ERRORS = 0,
 	BAD_CRC_CHKSUM,
 	SENT_NAK,
 	SENT_CAN,
@@ -85,8 +85,8 @@ typedef enum modem_errors{
 	ASYNC_XFER_INCOMPLETE, /* May not be useful. */
 	FILE_ERROR,
 	UNDEFINED_ERROR, /* Placeholder error. */
-	SERIAL_ERROR, /* Error reading, writing, or accessing serial device. */
-	TIMEOUT,	/* No data was read in expected time frame. */
+	MODEM_HW_ERROR, /* Error reading, writing, or accessing serial device. */
+	MODEM_TIMEOUT,	/* No data was read in expected time frame. */
 	INVALID_MODE, /* Invalid xfer mode for function (i.e. using YMODEM_G in XMODEM). */
 	NOT_IMPLEMENTED
 }MODEM_ERRORS;

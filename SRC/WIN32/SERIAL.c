@@ -23,7 +23,7 @@
 #include <stddef.h> /* For NULL. */
 
 /* void windows_error(char *); */
-int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr)
+SERIAL_STATUS serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr)
 {
 	char com_string[12] = "\\\\.\\COM\0\0\0\0";
 	DCB dcbSerialParams;
@@ -38,8 +38,8 @@ int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t
 	{
 		(* port_addr) = NULL;
 		/* See Receive/Send status codes in MODEM.H for difference
-		 * between SERIAL_ERROR and TIMEOUT. */
-		return SERIAL_ERROR;
+		 * between SERIAL_HW_ERROR and SERIAL_TIMEOUT. */
+		return SERIAL_HW_ERROR;
 	}
 	
 	
@@ -47,7 +47,7 @@ int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t
 	if (!GetCommState((* port_addr), &dcbSerialParams)) 
 	{
 		serial_close(port_addr); /* Sets port to null. */
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}	
 		
 	dcbSerialParams.DCBlength=sizeof(dcbSerialParams);
@@ -72,7 +72,7 @@ int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t
 	if(!SetCommState((* port_addr), &dcbSerialParams))
 	{
 		serial_close(port_addr); /* Sets port to null. */
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 	
 	/* Add if-else here? */
@@ -86,15 +86,15 @@ int serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t
 	if(!SetCommTimeouts((* port_addr), &timeouts))
 	{
 		serial_close(port_addr);	
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}	
 	else
 	{
-		return NO_ERRORS;
+		return SERIAL_NO_ERRORS;
 	}
 }
 
-int serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
+SERIAL_STATUS serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
 {
 	DWORD dwBytesWritten = 0;
 	
@@ -102,15 +102,15 @@ int serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
 	
 	if(WriteFile(port, data, (DWORD) num_bytes, &dwBytesWritten, NULL))
 	{
-		return NO_ERRORS;
+		return SERIAL_NO_ERRORS;
 	}
 	else
 	{
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 }
 
-int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t port)
+SERIAL_STATUS serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t port)
 {	
 	DWORD timeout_ticks;
 	DWORD dwBytesRead = 0;
@@ -135,7 +135,7 @@ int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t
 	if(!GetCommTimeouts(port, &prev_timeouts))
 	{
 		/* windows_error("serial_rcv_1()"); */	
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 	
 	curr_timeouts = prev_timeouts;
@@ -147,7 +147,7 @@ int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t
 	
 	if(!SetCommTimeouts(port, &curr_timeouts))
 	{
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 
 	if(ReadFile((HANDLE) port, data, (DWORD) num_bytes, &dwBytesRead, NULL))
@@ -157,52 +157,52 @@ int serial_rcv(char * data, unsigned int num_bytes, int timeout, serial_handle_t
 		SetCommTimeouts(port, &prev_timeouts);
 		if(dwBytesRead == (DWORD) num_bytes)
 		{	
-			return NO_ERRORS;
+			return SERIAL_NO_ERRORS;
 		}
 		else
 		{
-			return TIMEOUT;
+			return SERIAL_TIMEOUT;
 		}
 	}
 	/* Otherwise a more serious error occurred. */
 	else
 	{
 		SetCommTimeouts(port, &prev_timeouts);
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 		
 	
 	/* Handle this somehow... */
 	/* if(dwBytesRead < num_bytes)
 	{
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	} */
 }
 
-int serial_close(serial_handle_t * port_addr)
+SERIAL_STATUS serial_close(serial_handle_t * port_addr)
 {
 	/* Both the flush and close must succeed to return
 	 * without error. */
-	if((serial_flush(port_addr) == NO_ERRORS) && CloseHandle((* port_addr)))
+	if((serial_flush(port_addr) == SERIAL_NO_ERRORS) && CloseHandle((* port_addr)))
 	{
 		(* port_addr) = NULL;
-		return NO_ERRORS;
+		return SERIAL_NO_ERRORS;
 	}
 	else
 	{
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 }
 
-int serial_flush(serial_handle_t port_addr)
+SERIAL_STATUS serial_flush(serial_handle_t port_addr)
 {
 	if(FlushFileBuffers(port_addr))
 	{
-		return NO_ERRORS;
+		return SERIAL_NO_ERRORS;
 	}
 	else
 	{
-		return SERIAL_ERROR;
+		return SERIAL_HW_ERROR;
 	}
 }
 #else

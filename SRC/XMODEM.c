@@ -14,7 +14,8 @@ static void clear_buffer(unsigned char * buf, size_t bufsiz);
 /* const doesn't work due to some weird rules in C... */
 static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, unsigned short mode);
 static void purge(serial_handle_t serial_device);
-static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
+static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
+static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status);
 /* static void assemble_packet(XMODEM_OFFSETS * offsets, )
 static void disassemble_packet() */
 /* Implement this! */
@@ -38,7 +39,8 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	 * buffer holding the packet. */
 	unsigned char * offsets[6];
 	char rx_code = NUL;
-	unsigned int status = 0;
+	MODEM_ERRORS modem_status = 0;
+	SERIAL_STATUS ser_status = 0;
 	/* Logic variables. */
 	int eof_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
 	size_t bytes_read, block_size; /* Check to see if EOF was reached using bytes_read */
@@ -47,9 +49,9 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	/* Flush the device buffer in case some characters were remaining
 	 * to prevent glitches. */ 
 	serial_flush(serial_device);
-	if((status = wait_for_rx_ready(serial_device, flags)) != NO_ERRORS)
+	if((modem_status = wait_for_rx_ready(serial_device, flags)) != MODEM_NO_ERRORS)
 	{
-		return status;
+		return modem_status;
 	}
 	
 	/* Depending on mode set, set offsets. */	
@@ -118,15 +120,15 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		serial_flush(serial_device);
 		
 		/* Wait for any character. */
-		status = serial_rcv(&rx_code, 1, 60, serial_device);
+		ser_status = serial_rcv(&rx_code, 1, 60, serial_device);
 		
 		/* Protocol is completely receiver-driven (will not retransmit
 		automatically without receiver intervention)- bail on timeout
 		or hardware error. */
 		/* All four conditions are mutually exclusive. */
-		if(status != NO_ERRORS)
+		if(ser_status != SERIAL_NO_ERRORS)
 		{
-			return status;
+			return serial_to_modem_error(ser_status);
                 }
                 else if(rx_code == ACK)
 		{
@@ -158,16 +160,16 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		char eot_char = EOT;
 		
 		serial_snd(&eot_char, 1, serial_device);
-		status = serial_rcv(&rx_code, 1, 60, serial_device);
-	}while(status == NO_ERRORS && !(rx_code == ACK || rx_code == CAN));
+		ser_status = serial_rcv(&rx_code, 1, 60, serial_device);
+	}while(ser_status == SERIAL_NO_ERRORS && !(rx_code == ACK || rx_code == CAN));
 	
-	if(status != NO_ERRORS)
+	if(ser_status != SERIAL_NO_ERRORS)
 	{
-		return status;
+		return serial_to_modem_error(ser_status);
 	}
 	else
 	{
-		return (rx_code == ACK) ? NO_ERRORS : SENT_CAN;
+		return (rx_code == ACK) ? MODEM_NO_ERRORS : SENT_CAN;
 	}
 }
 
@@ -179,17 +181,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 	 * buffer holding the packet. */
 	unsigned char * offsets[6];
 	char tx_code = NUL;
-	
-	/* May be better practice then using a single static global enum. */
-	
-	/* fseek(SEEK_CUR) may not be portable, as described here:
-	 * http://www.cplusplus.com/reference/clibrary/cstdio/fseek/.
-	 * Additionally, one is probably not going to use XMODEM to transfer
-	 * 4G+ files... */
-	unsigned long current_offset = 0;
-	
-	unsigned int count, /* Loop variable. */ \
-		status = 0, error_count = 0; 
+	unsigned int count, /* Loop variable. */ error_count = 0; 
 	
 	unsigned char expected_start_char_1 = 0, expected_start_char_2 = 0, \
 			expected_block_no = 0, expected_comp_block_no = 0;
@@ -199,7 +191,8 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 	
 	/* Check to see if EOF was reached using bytes_read */
 	size_t bytes_written;
-	
+	MODEM_ERRORS modem_status;
+	SERIAL_STATUS ser_status;
 	int in_bufsiz;
 	
 	/* This function combines all X/Y modem functionality... any
@@ -254,7 +247,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				tx_code = CAN;
 				serial_snd(&tx_code, 1, serial_device);
 				/* return SERIAL_ERROR if 11 errors occurred */
-				return TIMEOUT;
+				return MODEM_TIMEOUT;
 			}
 			
 			/* Fallback to XMODEM from XMODEM_CRC if conditions
@@ -266,7 +259,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				set_packet_offsets(offsets, rx_buffer, flags);
 			} 
 			
-			status = serial_rcv((char *) rx_buffer, 1, 10, serial_device);
+			ser_status = serial_rcv((char *) rx_buffer, 1, 10, serial_device);
 			
 			if(rx_buffer[0] == expected_start_char_2 \
 				|| rx_buffer[0] == expected_start_char_1)
@@ -279,7 +272,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				break;
 			}
 			
-			if(status == TIMEOUT)
+			if(ser_status == SERIAL_TIMEOUT)
 			{
 				/* debug-printf eventually?
 				printf("Timeout occurred.\n"); */
@@ -325,8 +318,8 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			count = 1; /* First character must be preserved because all
 				* offsets have been set. If not preserved,
 				* all data is shifted to by one element downward. */
-			status = serial_rcv((char *) (rx_buffer + 1), (offsets[END] - offsets[BLOCK_NO]), 1, serial_device);
-			
+			ser_status = serial_rcv((char *) (rx_buffer + 1), (offsets[END] - offsets[BLOCK_NO]), 1, serial_device);
+			modem_status = serial_to_modem_error(ser_status);
 			
 			/* Check for small XMODEM-1K packet. */ 
 			/* if(flags == XMODEM_1K)
@@ -356,7 +349,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			
 			
 			/* Check for common errors. */
-			if(status != NO_ERRORS) /* For now, only TIMEOUT is expected here. */
+			if(ser_status != SERIAL_NO_ERRORS) /* For now, only TIMEOUT is expected here. */
 			{
 				/* If error occurs cause RX timeout before sending status code,
 				 * since transmitter flushes UART buffer after sending packet. */
@@ -373,7 +366,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				handles receiving the previous packet again. */
 				
 				/* printf("Packet Mismatch\n", chksum); */
-				status = PACKET_MISMATCH;
+				modem_status = PACKET_MISMATCH;
 			}
 			
 			/* This ridiculous else if statement can be read as:
@@ -384,21 +377,21 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				(size_t) ((offsets[CHKSUM_CRC]) - offsets[DATA])) \
 				!= *offsets[CHKSUM_CRC])
 			{
-				status = BAD_CRC_CHKSUM;	
+				modem_status = BAD_CRC_CHKSUM;	
 			}
 			
 			/* Ditto, except for CRC errors. */
 			else if((flags != XMODEM) && \
 				generate_crc(offsets[DATA], (size_t) (offsets[END] - offsets[DATA])) != 0)
 			{
-				status = BAD_CRC_CHKSUM;
+				modem_status = BAD_CRC_CHKSUM;
 			}
 			
 			/* printf("Current Status Code: %X\n", status); */	
-			switch(status)
+			switch(modem_status)
 			{
 				case BAD_CRC_CHKSUM:
-				case TIMEOUT:
+				case MODEM_TIMEOUT:
 					/* modem_fseek(f_ptr, current_offset); */
 					tx_code = NAK;
 					serial_snd(&tx_code, 1, serial_device);
@@ -408,7 +401,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 					serial_snd(&tx_code, 1, serial_device);
 					return PACKET_MISMATCH;
 					break;				
-				case NO_ERRORS:			
+				case MODEM_NO_ERRORS:			
 					expected_comp_block_no = ~(++expected_block_no);
 					/* bytes_written = modem_fwrite(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), f_ptr); */
 					bytes_written = data_in_fcn((char *) offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), eot_detected, chan_state);
@@ -421,7 +414,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 					}
 					else
 					{
-						current_offset += (offsets[CHKSUM_CRC] - offsets[DATA]);
+						/* current_offset += (offsets[CHKSUM_CRC] - offsets[DATA]); */
 						error_count = -1; 
 						/* Reset error count if entire packet successfully
 						 * sent (all errors retried 10 times). */
@@ -450,9 +443,10 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 	}while(!eot_detected);
 	
 	tx_code = ACK; 
-	status = serial_snd(&tx_code, 1, serial_device);
+	ser_status = serial_snd(&tx_code, 1, serial_device);
+	/* Discard for now, but perhaps add an error code for failure at end? */
 	
-	return NO_ERRORS;
+	return MODEM_NO_ERRORS;
 }
 
 
@@ -553,18 +547,18 @@ static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * 
 
 static void purge(serial_handle_t serial_dev)
 {
-	unsigned int timeout_status = NO_ERRORS;
+	SERIAL_STATUS timeout_status = SERIAL_NO_ERRORS;
 	char dummy_byte;
 	do{
 		timeout_status = serial_rcv(&dummy_byte, 1, 1, serial_dev);
-	}while(timeout_status != TIMEOUT);
+	}while(timeout_status != SERIAL_TIMEOUT);
 }
 
-static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
+static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
 {
 	time_t start,end;
 	unsigned int elapsed_time;
-	int status = NO_ERRORS;
+	SERIAL_STATUS ser_status = SERIAL_NO_ERRORS;
 	int expected_rx_detected = MODEM_FALSE;
 	char rx_code = NUL;
 	
@@ -574,12 +568,12 @@ static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags
 	{	
 		time(&end);
 		elapsed_time = modem_difftime(end, start);	
-		status = serial_rcv(&rx_code, 1, 60 - elapsed_time, serial_device);
+		ser_status = serial_rcv(&rx_code, 1, 60 - elapsed_time, serial_device);
 		/* printf("Char detected:\t%X\n", rx_code); */
 		
 
 		/* What happens if error on setting timeouts? */
-		if(status == TIMEOUT || status == SERIAL_ERROR)
+		if(ser_status != SERIAL_NO_ERRORS)
 		{
 			break;
 		}
@@ -594,7 +588,8 @@ static int wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags
 			expected_rx_detected = MODEM_TRUE;
 		}
 	}
-	return status;
+	
+	return serial_to_modem_error(ser_status);
 }
 
 static int wait_for_rx_ack(serial_handle_t serial_device)
@@ -602,4 +597,27 @@ static int wait_for_rx_ack(serial_handle_t serial_device)
 	char rx_code;
 	
 	
+}
+
+
+static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status)
+{
+	MODEM_ERRORS equiv_status;
+	switch(status)
+	{
+		case SERIAL_NO_ERRORS:
+			equiv_status = MODEM_NO_ERRORS;
+			break;
+		case SERIAL_TIMEOUT:
+			equiv_status = MODEM_TIMEOUT;
+			break;
+		case SERIAL_HW_ERROR:
+			equiv_status = MODEM_HW_ERROR;
+			break;
+		default:
+			equiv_status = UNDEFINED_ERROR;
+			break;
+	}
+	
+	return equiv_status;
 }
