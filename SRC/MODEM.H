@@ -111,6 +111,18 @@ typedef struct modem_status{
 	char * filename;	
 }MODEM_STATUS;
 
+/* typedef struct xmodem_packet
+{
+	char * start_char;
+	unsigned char * block_no;
+	unsigned char * block_no_comp;
+	char * data;
+	unsigned char * chksum_crc;
+	char * end_char;
+	size_t size;
+	XFER_MODES type;
+}XMODEM_PACKET; */
+
 typedef int (* O_channel)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
 typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, void * const chan_state);
 
@@ -132,8 +144,8 @@ typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, v
 /* uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
 
-MODEM_ERRORS xmodem_tx(O_channel data_out, char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
-MODEM_ERRORS xmodem_rx(I_channel data_in, char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
+MODEM_ERRORS xmodem_tx(O_channel data_out, unsigned char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
+MODEM_ERRORS xmodem_rx(I_channel data_in, unsigned char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
 MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 /* uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
@@ -146,8 +158,8 @@ return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards
 xmodem_tx, xmodem_rx, ymodem_tx, ymodem_rx, etc... */
 
 /* Change data sizes all to uint32_t? */
-unsigned char generate_chksum(char * data, size_t size);
-unsigned short generate_crc(char * data, size_t size);
+unsigned char generate_chksum(unsigned char * data, size_t size);
+unsigned short generate_crc(unsigned char * data, size_t size);
 
 
 /* If using asynchronous I/O (interrupt-driven), use an idle function to
