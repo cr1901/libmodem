@@ -1,9 +1,9 @@
-Import('env', 'build_dir')
+Import('env', 'build_dir', 'pi_files')
 
 # Build one or more test runners. Relax ANSI requirement here.
 
 if env['TARGET_OS'] != 'DOS':
-	unittest = env.Program('unittest.c', CCFLAGS='', LIBS='modem', LIBPATH=build_dir)
+	unittest = env.Program(Split('unittest.c serial.c') + pi_files, CPPPATH=Dir('#/SRC'))
 # Depend on the runner to ensure that it's built before running it - Note: using abspath.
 	test_alias = Alias('test', [unittest], unittest[0].abspath)
 # Simply required.  Without it, 'test' is never considered out of date.

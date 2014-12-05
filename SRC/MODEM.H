@@ -71,8 +71,11 @@ typedef enum offset_names
 	BLOCK_NO,
 	COMP_BLOCK_NO,
 	DATA,
-	CHKSUM_CRC,
-	END
+	CHKSUM_CRC=131,
+	CHKSUM_END=132,
+	CRC_END=133,
+	X1K_CRC=1027,
+	X1K_END=1029
 }OFFSET_NAMES;
 
 /** Receive/Send status codes. **/
@@ -144,8 +147,8 @@ typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, v
 /* uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
 
-MODEM_ERRORS xmodem_tx(O_channel data_out, unsigned char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
-MODEM_ERRORS xmodem_rx(I_channel data_in, unsigned char * buf, void * chan_state, serial_handle_t device, unsigned short flags);
+MODEM_ERRORS xmodem_tx(O_channel data_out, unsigned char * buf, void * chan_state, serial_handle_t device, const unsigned short flags);
+MODEM_ERRORS xmodem_rx(I_channel data_in, unsigned char * buf, void * chan_state, serial_handle_t device, const unsigned short flags);
 MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 /* uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
