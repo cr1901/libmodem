@@ -1,0 +1,6 @@
+[submodule "site_scons/site_tools/doxygen"]
+	path = site_scons/site_tools/doxygen
+	url = git://github.com/ptomulik/scons_doxygen.git
+[submodule "site_scons/site_tools/doxyfile"]
+	path = site_scons/site_tools/doxyfile
+	url = git://github.com/ptomulik/scons-tool-doxyfile.git
