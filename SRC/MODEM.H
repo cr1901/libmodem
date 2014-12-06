@@ -109,8 +109,8 @@ typedef enum xfer_modes
 }XFER_MODES;
 
 typedef struct modem_status{
-	uint32_t bytes_transferred;
-	uint16_t time_elapsed;
+	unsigned long bytes_transferred;
+	unsigned short time_elapsed;
 	char * filename;	
 }MODEM_STATUS;
 
@@ -149,8 +149,8 @@ uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 
 MODEM_ERRORS xmodem_tx(O_channel data_out, unsigned char * buf, void * chan_state, serial_handle_t device, const unsigned short flags);
 MODEM_ERRORS xmodem_rx(I_channel data_in, unsigned char * buf, void * chan_state, serial_handle_t device, const unsigned short flags);
-MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
-MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
+MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, const unsigned short flags);
+MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, const unsigned short flags);
 /* uint16_t zmodem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t zmodem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t kermit_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);

@@ -5,7 +5,6 @@
 #include "config.h" */
 
 #include <stdio.h>
-#include <stdint.h>
 
 /* File opening and closing. If stdio is not used, comparable
  * routines need to be implemented. Use the macros below as
@@ -38,7 +37,7 @@ typedef FILE modem_file_t;
 	
 }FILE_PERM; */
 
-extern uint32_t get_file_size(char * filename);
+extern unsigned long get_file_size(char * filename);
 extern void get_modification_date(char * filename, char * mod_date);
 extern void get_permissions(char * filename);
 #endif        /*  #ifndef FILES_H  */

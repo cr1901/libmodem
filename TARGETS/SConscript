@@ -17,9 +17,7 @@ if env['TARGET_OS'] == 'WIN32':
 #However, if the tools to build do NOT exist, execute a script to create them.	
 elif env['TARGET_OS'] == 'DOS':
 	env = env.Clone(tools = ['watcom'])
-	#env.Append(CCFLAGS='-bt=dos -za -wx -wce=303')
-	#-za causes configure tests to fail...
-	env.Append(CCFLAGS='-bt=dos -wx -wce=303')
+	env.Append(CCFLAGS='-bt=dos -za -wx -wce=303')
 	env['MEMMODEL16'] = 's'
 
 

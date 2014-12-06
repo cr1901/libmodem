@@ -1,6 +1,5 @@
 #include "timewrap.h"
 #include "serial.h"
-#include "files.h"
 #include "modem.h"
 
 /* #include "config.h"
@@ -16,7 +15,7 @@ static void pad_buffer(unsigned char * buf, size_t bufsiz, unsigned char val);
 static void purge(serial_handle_t serial_device);
 static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
 static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status);
-static MODEM_ERRORS verify_packet(unsigned char * buf, unsigned short flags);
+/* static MODEM_ERRORS verify_packet(unsigned char * buf, unsigned short flags); */
 /* static void assemble_packet(XMODEM_OFFSETS * offsets, )
 static void disassemble_packet() */
 /* Implement this! */
@@ -180,7 +179,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 	MODEM_ERRORS modem_status;
 	SERIAL_STATUS ser_status;
 	OFFSET_NAMES chksum_offset, packet_end;
-	int in_bufsiz;
+	/* int in_bufsiz; */
 	
 	
 	/* Depending on mode set, set offsets. */
