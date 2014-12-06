@@ -43,7 +43,14 @@ SERIAL_STATUS serial_rcv(char * data, unsigned int num_bytes, int timeout, seria
 		timeout = 0;
 	}
 	
-	read_stat = read_data(port, data, num_bytes, timeout);
+	if(handle_valid(port))
+	{
+		read_stat = read_data(port, data, num_bytes, timeout);
+	}
+	else
+	{
+		read_stat = -2;
+	}
 	
 	/* TODO: eventually handle case where some chars received, but not all
 	requested and then timeout or hw error occurs. */
@@ -69,7 +76,8 @@ SERIAL_STATUS serial_close(serial_handle_t * port_addr)
 	SERIAL_STATUS ser_stat = SERIAL_NO_ERRORS;
 	/* Both the flush and close must succeed to return without error. */
 	 
-	if((serial_flush((* port_addr)) != SERIAL_NO_ERRORS) || close_handle((* port_addr)))
+	if(!handle_valid((* port_addr)) || (serial_flush((* port_addr)) != SERIAL_NO_ERRORS) \
+		|| close_handle((* port_addr)))
 	{
 		ser_stat = SERIAL_HW_ERROR;
 	}
@@ -85,7 +93,7 @@ SERIAL_STATUS serial_flush(serial_handle_t port_addr)
 {
 	SERIAL_STATUS ser_stat = SERIAL_NO_ERRORS;
 		
-	if(flush_device(port_addr))
+	if(!handle_valid(port_addr) || flush_device(port_addr))
 	{
 		ser_stat = SERIAL_HW_ERROR;
 	}
