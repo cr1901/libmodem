@@ -41,9 +41,9 @@ if env['TARGET_OS'] == 'DOS':
 	
 #print env.Dump('LINKCOM')
 xfer_exe_src = Split('TRXCOM.c')
-core_platform_independent = Split('XMODEM.c YMODEM.c')
+core_platform_independent = Split('SERIAL.c XMODEM.c YMODEM.c')
 core_platform_independent = [Dir('.').File(src) for src in core_platform_independent]
-core_platform_dependent = Split('SERIAL.c')
+core_platform_dependent = Split('SERPRIM.c')
 core_platform_dependent = [Dir(env['TARGET_OS']).File(src) for src in core_platform_dependent]
 #env.Object(core_src_files)
 

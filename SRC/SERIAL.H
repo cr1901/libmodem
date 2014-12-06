@@ -23,13 +23,6 @@
  *    access to hardware occurs, or the port has been closed 
  *    (value at initialization not considered). */
 
-/* THANK GOD FOR <time.h>! */
-/* extern uint16_t check_timer(timer_handle_t t_port);
-extern timer_handle_t init_timer(void);
-extern start_timer(timer_handle_t t_port); 
-extern uint16_t reset_timer(timer_handle_t t_port);
-extern uint16_t stop_timer(timer_handle_t t_port); */
-
 typedef void * serial_handle_t;
 
 typedef enum serial_status
