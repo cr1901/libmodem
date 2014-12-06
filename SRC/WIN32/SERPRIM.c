@@ -35,7 +35,7 @@ int init_port(serial_handle_t port, unsigned long baud_rate)
 	
 	if(!GetCommState(port, &dcbSerialParams)) 
 	{
-		serial_close(port); /* Sets port to null. */
+		serial_close(port); /* Sets port to null. Necessary? */
 		return -1;
 	}
 	
