@@ -28,7 +28,7 @@ def check_char_bit(context):
 	return ret
 		
 
-platform_signatures = {'DOS': ['__DOS__'], 'WIN32': ['__WINDOWS__', '_WIN32']}
+platform_signatures = {'dos': ['__DOS__'], 'win32': ['__WINDOWS__', '_WIN32']}
 
 def platform_sanity_checks(env):
 	if not env.GetOption('clean') and not env.GetOption('help'):

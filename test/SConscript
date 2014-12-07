@@ -5,8 +5,8 @@ Import('env', 'build_dir', 'pi_files')
 #pi_files = Split('SERIAL.c XMODEM.c YMODEM.c')
 #pi_files = [Dir('#/SRC').File(src) for src in pi_files]
 
-if env['TARGET_OS'] != 'DOS':
-	unittest_obj = env.Object(Split('unittest.c serprim.c'), CPPPATH=Dir('#/SRC'))
+if env['TARGET_OS'] in ['win32']:
+	unittest_obj = env.Object(Split('unittest.c serprim.c'), CPPPATH=Dir('#/src'))
 	unittest = env.Program(unittest_obj + pi_files)
 # Depend on the runner to ensure that it's built before running it - Note: using abspath.
 	test_alias = Alias('test', [unittest], unittest[0].abspath)

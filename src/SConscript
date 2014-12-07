@@ -19,7 +19,9 @@ perform_compiler_configuration(env, 0) #Get information about the environment
 extra_platform_dependent = []
 
 #If external libraries are required for the base-executable, check for them now.
-if env['TARGET_OS'] == 'DOS':
+#This will be removed at some point to remove extern lib dependencies, so
+#the filename path capitalization remains unchanged.
+if env['TARGET_OS'] == 'dos':
 	env.Append(CPPPATH = ['#/../PICTOR'])
 	env.Append(LIBPATH = ['#/../PICTOR'])
 	libname = 'PICTOR' + string.capitalize(env.subst('$MEMMODEL')) + 'W'
@@ -40,10 +42,10 @@ if env['TARGET_OS'] == 'DOS':
 			
 	
 #print env.Dump('LINKCOM')
-xfer_exe_src = Split('TRXCOM.c')
-core_platform_independent = Split('SERIAL.c XMODEM.c YMODEM.c')
+xfer_exe_src = Split('trxcom.c')
+core_platform_independent = Split('serial.c xmodem.c ymodem.c')
 core_platform_independent = [Dir('.').File(src) for src in core_platform_independent]
-core_platform_dependent = Split('SERPRIM.c')
+core_platform_dependent = Split('serprim.c')
 core_platform_dependent = [Dir(env['TARGET_OS']).File(src) for src in core_platform_dependent]
 #env.Object(core_src_files)
 

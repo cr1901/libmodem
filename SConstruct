@@ -9,7 +9,7 @@ vars.Add(EnumVariable('BUILD_TYPE', 'Set the build type for the current target',
 	'Debug', allowed_values=('Debug', 'Release')))
 vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables.', '#/BIN'))
 vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
-	'WIN32', allowed_values=('WIN32', 'DOS')))
+	'WIN32', allowed_values=('win32', 'dos')))
 
 vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/BIN'))
 
@@ -36,10 +36,10 @@ if env['DEBUG_MESSAGES']:
 	print 'Dumping Environment: ' + env.Dump()
 
 env.Append(CPPPATH = '.') #See pitfalls for rationale.
-build_dir = Dir('BUILD/' + env['TARGET_OS'])
-env = SConscript(['TARGETS/SConscript'], exports = ['env'])
-pi_files = SConscript(['SRC/SConscript'], exports = ['env'], variant_dir = build_dir, duplicate=0)
-SConscript(['TEST/SConscript'], exports = ['env', 'build_dir', 'pi_files'], variant_dir = build_dir.Dir('TEST'), duplicate=0)
+build_dir = Dir('build/' + env['TARGET_OS'])
+env = SConscript(['targets/SConscript'], exports = ['env'])
+pi_files = SConscript(['src/SConscript'], exports = ['env'], variant_dir = build_dir, duplicate=0)
+SConscript(['test/SConscript'], exports = ['env', 'build_dir', 'pi_files'], variant_dir = build_dir.Dir('test'), duplicate=0)
 
 #http://www.knowthytools.com/2009/05/scons-cleaning-variantdir.html
 #Clean('.', 'BIN/' + env['TARGET_OS'])
