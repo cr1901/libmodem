@@ -17,10 +17,16 @@ void get_ymodem_filesize(modem_file_t * file_pointer); */
 wait for/send response (TX the latter- rx packet then send response), start xmodem routine */
 MODEM_ERRORS ymodem_tx(modem_file_t ** f_ptr, serial_handle_t device, const unsigned short flags)
 {
+	(void) f_ptr;
+	(void) device;
+	(void) flags;
 	return NOT_IMPLEMENTED;
 }
 
 MODEM_ERRORS ymodem_rx(modem_file_t ** f_ptr, serial_handle_t device, const unsigned short flags)
 {
+	(void) f_ptr;
+	(void) device;
+	(void) flags;
 	return NOT_IMPLEMENTED;
 }

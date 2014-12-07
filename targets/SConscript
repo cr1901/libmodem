@@ -7,12 +7,12 @@ Import('env')
 #Use Scons default tools if they are built in (with changes to relevant variables
 if env['TARGET_OS'] == 'win32':
 	env = env.Clone(tools = ['mingw'], \
-		CCFLAGS='-ansi -Wall -Wextra -pedantic-errors -Wno-unused-parameter')
+		CCFLAGS='-ansi -Wall -Wextra -pedantic-errors')
 	
 #However, if the tools to build do NOT exist, execute a script to create them.	
 elif env['TARGET_OS'] == 'dos':
 	env = env.Clone(tools = ['watcom'])
-	env.Append(CCFLAGS='-bt=dos -za -wx -wce=303')
+	env.Append(CCFLAGS='-bt=dos -za -wx')
 	env['MEMMODEL16'] = 's'
 
 #If host same as target
