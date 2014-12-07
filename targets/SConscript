@@ -1,15 +1,10 @@
-#TARGETS SConscript
+#targets SConscript
 #Get settings.py values to determine the target. Use platform as well.
-
-#def serial_xfer(target, source, env):
-#	from subprocess import call
-#	call(["TRXCOM", "/T /X /CRC /1K /B:19200 /P:4"])
 
 import os
 Import('env')
 
 #Use Scons default tools if they are built in (with changes to relevant variables
-#env = env.Clone(tools = ['mingw'], toolpath = ['.'])
 if env['TARGET_OS'] == 'win32':
 	env = env.Clone(tools = ['mingw'], \
 		CCFLAGS='-ansi -Wall -Wextra -pedantic-errors -Wno-unused-parameter')
@@ -20,11 +15,6 @@ elif env['TARGET_OS'] == 'dos':
 	env.Append(CCFLAGS='-bt=dos -za -wx -wce=303')
 	env['MEMMODEL16'] = 's'
 
-
-if env['DEBUG_MESSAGES']:
-	print 'Dumping Environment: ' + env.Dump()
-
-
 #If host same as target
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
 	env.Alias('install', env['HOST_INSTALL_DIR'])
@@ -33,10 +23,9 @@ if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
 #else:
 #	env.Alias('install', 'xfer')
 
-#env = default_env.Clone(tools = ['mingw'], toolpath = ['.'])
-
 env.AppendENVPath('PATH', env['HOST_INSTALL_DIR'])
 bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:115200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
 env.Append(BUILDERS = {'Xfer' : bld})
 
 Return('env')
+

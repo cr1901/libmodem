@@ -1,20 +1,10 @@
-#SRC SConscript (Base Executable)
+#src SConscript (Base Executable and Library)
 import string
 
 Import('env')
 
-#More VariantDir include fun! Assume corresponding append in SConstruct is
-#commented out:
-#env.Append(CPPPATH = '.') #This works!
-#env.Append(CPPPATH = 'SRC') #Does not work, but DOES include original src when duplicate=0 (well there IS no SRC subdir :P).
-#env.Append(CPPPATH = '#/SRC') #Neither does this...
-#env.Append(CPPPATH = Dir('.')) #This half-works (fails to include original src when duplicate=0).
-#env.Append(CPPPATH = Dir('SRC')) #Does not work and fails to include original src...
-#env.Append(CPPPATH = Dir('#/SRC')) #Doesn't work either!
-
 platform_sanity_checks(env) #Test for situations where compilation will surely fail
 perform_compiler_configuration(env, 0) #Get information about the environment
-
 
 extra_platform_dependent = []
 
@@ -29,9 +19,6 @@ if env['TARGET_OS'] == 'dos':
 	if not env.GetOption('clean'):
 		conf = Configure(env)
 		
-		#According to SCons manual, files are relative to top level directory
-		#for builders...
-		#if not conf.CheckLibWithHeader('../PICTOR/' + libname, '../PICTOR/COMLIB.H', 'c'):
 		if not conf.CheckLibWithHeader(libname, 'COMLIB.H', 'c'):
 			print "PICTOR Library required for DOS target! "
 			"Install in the same directory where the top level "
@@ -39,40 +26,34 @@ if env['TARGET_OS'] == 'dos':
 			Exit(1)
 
 		env = conf.Finish()
-			
-	
-#print env.Dump('LINKCOM')
+		
+#PI- Platform Independent, PD- Platform Dependent
 xfer_exe_src = Split('trxcom.c')
-core_platform_independent = Split('serial.c xmodem.c ymodem.c')
-core_platform_independent = [Dir('.').File(src) for src in core_platform_independent]
-core_platform_dependent = Split('serprim.c')
-core_platform_dependent = [Dir(env['TARGET_OS']).File(src) for src in core_platform_dependent]
-#env.Object(core_src_files)
+pi_src = [Dir('.').File(src) for src in Split('serial.c xmodem.c ymodem.c')]
+pd_src = [Dir(env['TARGET_OS']).File(src) for src in Split('serprim.c')]
+env.AppendUnique(CPPPATH = '.') #We are using a variant directory.
+#This ensures both variant and orig directory are included.
+#Rationale: http://four.pairlist.net/pipermail/scons-users/2014-April/002440.html
 
-#Some compilers require explicit include of current directory IF THE HEADER FILES
-#are not present in the directory in which the source file is being compiled.
-env.AppendUnique(CPPPATH = ['#']) 
-#env.AppendUnique(CPPPATH = '#')  #Works for WATCOM, not MinGW. hmmm...
-#I've seen both: http://goo.gl/wQaKTc
-#env.Object(core_platform_dependent)
-
-core_lib = env.Library('modem', core_platform_independent + core_platform_dependent)
+pi_objs = env.Object(pi_src) #We'll need pi_src
+core_lib = env.Library('modem', pd_src + pi_objs)
+Default(core_lib)
 #core_exe = env.Program('TRXCOM', core_src_files + core_platform_dependent)
+
 
 #Now build the platform-dependent files (if any)...
 
 
-
 #Install if the host OS matches target OS
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
-	#env.Install(env['HOST_INSTALL_DIR'], core_exe)
-	pass
+	env.Install(env['HOST_INSTALL_DIR'], [core_lib])
 else:
 	pass
 	#env.Xfer('dummy', 'TRXCOM')
 
-
-Return('core_platform_independent')
 #Or install over a serial line
 #if 'xfer' in COMMAND_LINE_TARGETS:
 #	env.Xfer('dummy', 'TRXCOM')
+
+Return('pi_objs')
+
