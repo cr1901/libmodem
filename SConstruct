@@ -11,7 +11,7 @@ vars.Add(EnumVariable('BUILD_TYPE', 'Set the build type for the current target',
 vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables.', '#/bin'))
 vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
 	'win32', allowed_values=('win32', 'dos')))
-
+vars.Add(PathVariable('EXTRA_PATH', 'Path to compilers if autodetection fails.', '#/bin'))
 vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/bin'))
 
 """Use Update(env) to add variables to existing environment:

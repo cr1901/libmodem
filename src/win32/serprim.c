@@ -14,7 +14,7 @@
 
 serial_handle_t open_handle(unsigned short port_no)
 {
-	char com_string[12] = "\\\\.\\COM\0\0\0\0";
+	char com_string[14] = "\\\\.\\COM\0\0\0\0\0\0";
 	HANDLE port_addr;
 	
 	sprintf(&com_string[7], "%d", port_no);

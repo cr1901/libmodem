@@ -24,6 +24,9 @@ if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
 #	env.Alias('install', 'xfer')
 
 env.AppendENVPath('PATH', env['HOST_INSTALL_DIR'])
+if env['EXTRA_PATH']:
+	env.AppendENVPath('PATH', env['EXTRA_PATH'])
+
 bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:115200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
 env.Append(BUILDERS = {'Xfer' : bld})
 

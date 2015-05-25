@@ -5,7 +5,7 @@
 /* #include "config.h"
 #include <stdlib.h> */
 
-/* #include <stdio.h> */
+#include <stdio.h>
 #include <stddef.h> /* For size_t, NULL */
 #include <time.h>
 
@@ -43,11 +43,12 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	OFFSET_NAMES chksum_offset;
 	/* Logic variables. */
 	int eof_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
-	size_t block_size; /* Check to see if EOF was reached using bytes_read */
+	size_t block_size, packet_size; /* Check to see if EOF was reached using bytes_read */
 	int last_sent_size = 0;
 	
 	/* Flush the device buffer in case some characters were remaining
 	 * to prevent glitches. */ 
+	/* printf("Wait for RX\n"); */
 	serial_flush(serial_device);
 	if((modem_status = wait_for_rx_ready(serial_device, flags)) != MODEM_NO_ERRORS)
 	{
@@ -60,6 +61,9 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	block_size = (flags == XMODEM_1K) ? 1024 : 128;
 	chksum_offset = (flags == XMODEM_1K) ? X1K_CRC : CHKSUM_CRC;
 	
+	/* Turn into if statement using enums for clarity? */
+	packet_size = (flags == XMODEM) ? chksum_offset + 1 : chksum_offset + 2;
+	
 	do{
 		int short_read;
 		size_t bytes_read;
@@ -67,6 +71,11 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		/* Read data from IO channel. */
 		bytes_read = data_out_fcn((char *) &tx_buffer[DATA], block_size, \
 			last_sent_size, chan_state);
+		
+		/* Refactor idea- fill_packet_data()
+		send_data()
+		interpret_response()
+		*/
 		short_read = (bytes_read < block_size);
 		
 		/* If less than 1024 bytes left in XMODEM_1K, switch to
@@ -79,6 +88,7 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 			chksum_offset = CHKSUM_CRC;
 			using_128_blocks_in_1k = MODEM_TRUE;
 			block_size = 128;
+			packet_size = chksum_offset + 2;
 			
 			if(bytes_read >= 128)
 			{
@@ -91,7 +101,9 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		if(short_read)
 		{
 			eof_detected = MODEM_TRUE;
+			/* printf("short read: %d\n", bytes_read); */
 			pad_buffer(&tx_buffer[DATA + bytes_read], block_size - bytes_read, CPMEOF);
+			/* printf("buffer padded\n"); */
 		}
 		
 		/* Generate the checksum/CRC. */
@@ -113,7 +125,11 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		}
 		
 		/* Send the packet. Wait for any character. */
-		serial_snd((char *) tx_buffer, block_size, serial_device);
+		/* printf("sending data\n");   */
+		{
+			serial_snd((char *) tx_buffer, packet_size, serial_device);
+		}
+		/* printf("data sent\n"); */
 		serial_flush(serial_device);
 		ser_status = serial_rcv(&rx_code, 1, 60, serial_device);
 		
@@ -518,6 +534,7 @@ static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned sh
 		/* Else, wait for NAK. */
 		else if((flags == XMODEM) && rx_code == NAK)
 		{
+			/* printf("We found NAK!\n"); */
 			expected_rx_detected = MODEM_TRUE;
 		}
 	}
