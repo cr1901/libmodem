@@ -7,10 +7,10 @@ print 'Reading settings.py to define current build'
 vars = Variables(['variables.cache', 'settings.py'])
 vars.Add(BoolVariable('DEBUG_MESSAGES', 'Set for debugging messages in SConscripts.', 0))
 vars.Add(EnumVariable('BUILD_TYPE', 'Set the build type for the current target', \
-	'Debug', allowed_values=('Debug', 'Release')))
+    'Debug', allowed_values=('Debug', 'Release')))
 vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables.', '#/bin'))
 vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
-	'win32', allowed_values=('win32', 'dos')))
+    'win32', allowed_values=('win32', 'dos')))
 vars.Add(PathVariable('EXTRA_PATH', 'Path to compilers if autodetection fails.', '#/bin'))
 vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/bin'))
 
@@ -25,10 +25,10 @@ Help(vars.GenerateHelpText(env))
 #variable TARGET_OS
 
 if env['TARGET_OS'] is None:
-	if env['DEBUG_MESSAGES']:
-		print 'No target specified and not using Win32.'
-		'Setting host platform as default.'
-	env['TARGET_OS'] = env['PLATFORM']
+    if env['DEBUG_MESSAGES']:
+        print 'No target specified and not using Win32.'
+        'Setting host platform as default.'
+    env['TARGET_OS'] = env['PLATFORM']
 
 build_dir = Dir('build/' + env['TARGET_OS'])
 
@@ -36,7 +36,7 @@ print 'Host platform is: ' + env['PLATFORM']
 print 'Target platform is: ' + env['TARGET_OS']
 print 'Build dir will be: ' + str(build_dir) + '\n'
 if env['DEBUG_MESSAGES']:
-	print 'Dumping Environment: ' + env.Dump()
+    print 'Dumping Environment: ' + env.Dump()
 
 env = SConscript(['targets/SConscript'], exports = ['env'])
 pi_objs = SConscript(['src/SConscript'], exports = ['env'], variant_dir = build_dir, duplicate=0)

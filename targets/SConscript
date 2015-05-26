@@ -6,26 +6,26 @@ Import('env')
 
 #Use Scons default tools if they are built in (with changes to relevant variables
 if env['TARGET_OS'] == 'win32':
-	env = env.Clone(tools = ['mingw'], \
-		CCFLAGS='-ansi -Wall -Wextra -pedantic-errors')
-	
-#However, if the tools to build do NOT exist, execute a script to create them.	
+    env = env.Clone(tools = ['mingw'], \
+        CCFLAGS='-ansi -Wall -Wextra -pedantic-errors')
+    
+#However, if the tools to build do NOT exist, execute a script to create them.    
 elif env['TARGET_OS'] == 'dos':
-	env = env.Clone(tools = ['watcom'])
-	env.Append(CCFLAGS='-bt=dos -za -wx')
-	env['MEMMODEL16'] = 's'
+    env = env.Clone(tools = ['watcom'])
+    env.Append(CCFLAGS='-bt=dos -za -wx')
+    env['MEMMODEL16'] = 's'
 
 #If host same as target
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
-	env.Alias('install', env['HOST_INSTALL_DIR'])
-	
-#env.Append(CPPPATH = Dir('#/BIN/' + env['TARGET_OS']))	
+    env.Alias('install', env['HOST_INSTALL_DIR'])
+    
+#env.Append(CPPPATH = Dir('#/BIN/' + env['TARGET_OS']))    
 #else:
-#	env.Alias('install', 'xfer')
+#    env.Alias('install', 'xfer')
 
 env.AppendENVPath('PATH', env['HOST_INSTALL_DIR'])
 if env['EXTRA_PATH']:
-	env.AppendENVPath('PATH', env['EXTRA_PATH'])
+    env.AppendENVPath('PATH', env['EXTRA_PATH'])
 
 bld = Builder(action = 'TRXCOM /T /X /CRC /1K /B:115200 /P:4 $SOURCE', src_suffix = env['PROGSUFFIX'])
 env.Append(BUILDERS = {'Xfer' : bld})
