@@ -3,6 +3,7 @@ destination, whether the device is working properly, etc. */
 
 #include "shared.h"
 
+#include <stdio.h>
 #include "serial.h"
 #include "serprim.h"
 #include <stddef.h> /* For NULL. */
@@ -29,7 +30,7 @@ char local_rx_line[STATIC_BUFSIZ];
 char * remote_tx_line = local_rx_line; /* Connect the virtual serial lines to each other. */
 char * remote_rx_line = local_tx_line;
 
-PORT_DESC port_model[3] = { {NULL, NULL, 0, 0, 0, 0, 0} };
+PORT_DESC port_model[3] = { {NULL, NULL, 0, 0, 0, 0, 0, 0, 0} };
 
 
 /* Needed as dummy target of void ptr at some point? */
@@ -70,6 +71,8 @@ int init_port(serial_handle_t port, unsigned long baud_rate)
 	VOID_TO_PORT(port, bad_write) = 0;
 	VOID_TO_PORT(port, bad_read) = 0;
 	VOID_TO_PORT(port, force_rx_timeout) = 0;
+	VOID_TO_PORT(port, buf_pos_tx) = 0;
+	VOID_TO_PORT(port, buf_pos_rx) = 0;
 	
 	return 0;
 }
@@ -84,11 +87,14 @@ int write_data(serial_handle_t port, char * data, unsigned int num_bytes)
 	if(!VOID_TO_PORT(port, bad_write))
 	{
 		unsigned int count;
+		unsigned int curr_offset = VOID_TO_PORT(port, buf_pos_tx);
+		/* printf("buf_pos_write: %d\n", VOID_TO_PORT(port, buf_pos_tx)); */
 		for(count = 0; count < num_bytes; count++)
 		{
-			((PORT_DESC *) port)->tx_line[count] = data[count];
+			((PORT_DESC *) port)->tx_line[curr_offset + count] = data[count];
 		}
 		
+		VOID_TO_PORT(port, buf_pos_tx) += num_bytes;
 		return 0;
 	}
 	else
@@ -112,11 +118,14 @@ int read_data(serial_handle_t port, char * data, unsigned int num_bytes, int tim
 	else
 	{
 		unsigned int count;
+		unsigned int curr_offset = VOID_TO_PORT(port, buf_pos_rx);
+		/* printf("buf_pos_read: %d\n", VOID_TO_PORT(port, buf_pos_rx)); */
 		for(count = 0; count < num_bytes; count++)
 		{
-			 data[count] = ((PORT_DESC *) port)->rx_line[count];
+			 data[count] = ((PORT_DESC *) port)->rx_line[curr_offset + count];
 		}
 		
+		VOID_TO_PORT(port, buf_pos_rx) += num_bytes;
 		return 0;
 	}
 }
@@ -135,6 +144,7 @@ int flush_device(serial_handle_t port)
 		{
 			((PORT_DESC *) port)->rx_line[count] = '\0';
 		}
+		VOID_TO_PORT(port, buf_pos_rx) = 0;
 	}
 	else
 	{
