@@ -86,7 +86,7 @@ typedef enum modem_errors{
 	SENT_CAN,
 	PACKET_MISMATCH, /* Packet equals number different from expected. */
 	ASYNC_XFER_INCOMPLETE, /* May not be useful. */
-	FILE_ERROR,
+	CHANNEL_ERROR,
 	UNDEFINED_ERROR, /* Placeholder error. */
 	MODEM_HW_ERROR, /* Error reading, writing, or accessing serial device. */
 	MODEM_TIMEOUT,	/* No data was read in expected time frame. */

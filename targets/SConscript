@@ -8,6 +8,8 @@ Import('env')
 if env['TARGET_OS'] == 'win32':
     env = env.Clone(tools = ['mingw'], \
         CCFLAGS='-ansi -Wall -Wextra -pedantic-errors')
+    if env['BUILD_TYPE'] == 'Release':
+    	    env.Append(CCFLAGS=' -Os')
     
 #However, if the tools to build do NOT exist, execute a script to create them.    
 elif env['TARGET_OS'] == 'dos':

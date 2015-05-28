@@ -5,7 +5,6 @@
 /* #include "config.h"
 #include <stdlib.h> */
 
-#include <stdio.h>
 #include <stddef.h> /* For size_t, NULL */
 #include <time.h>
 
@@ -14,7 +13,9 @@ static void pad_buffer(unsigned char * buf, size_t bufsiz, unsigned char val);
 /* static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, unsigned short mode); */
 static void purge(serial_handle_t serial_device);
 static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
+static MODEM_ERRORS wait_for_tx_response(serial_handle_t serial_device, unsigned short flags);
 static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status);
+static OFFSET_NAMES get_checksum_offset(unsigned short flags);
 /* static MODEM_ERRORS verify_packet(unsigned char * buf, unsigned short flags); */
 /* static void assemble_packet(XMODEM_OFFSETS * offsets, )
 static void disassemble_packet() */
@@ -33,24 +34,22 @@ unsigned overflow semantics (checksum and CRC). Therefore, this function
 expects an unsigned char * buffer as input. */
 
 MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void * chan_state, \
-	serial_handle_t serial_device, const unsigned short flags)
-{	
-	/* Array of pointers to the six packet section offsets within the 
-	 * buffer holding the packet. */
+	serial_handle_t serial_device, unsigned short flags)
+{
 	char rx_code = NUL;
 	MODEM_ERRORS modem_status = 0;
 	SERIAL_STATUS ser_status = 0;
 	OFFSET_NAMES chksum_offset;
 	/* Logic variables. */
-	int eof_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
+	int eof_detected = 0;
 	size_t block_size, packet_size; /* Check to see if EOF was reached using bytes_read */
 	int last_sent_size = 0;
 	
 	/* Flush the device buffer in case some characters were remaining
 	 * to prevent glitches. */ 
-	/* printf("Wait for RX\n"); */
 	serial_flush(serial_device);
-	if((modem_status = wait_for_rx_ready(serial_device, flags)) != MODEM_NO_ERRORS)
+	if((modem_status = wait_for_rx_ready(serial_device, flags)) != \
+		MODEM_NO_ERRORS)
 	{
 		return modem_status;
 	}
@@ -60,50 +59,35 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	tx_buffer[COMP_BLOCK_NO] = 0xFE;
 	block_size = (flags == XMODEM_1K) ? 1024 : 128;
 	chksum_offset = (flags == XMODEM_1K) ? X1K_CRC : CHKSUM_CRC;
-	
-	/* Turn into if statement using enums for clarity? */
 	packet_size = (flags == XMODEM) ? chksum_offset + 1 : chksum_offset + 2;
 	
 	do{
-		int short_read;
-		size_t bytes_read;
+		int bytes_read;
 		
 		/* Read data from IO channel. */
-		bytes_read = data_out_fcn((char *) &tx_buffer[DATA], block_size, \
-			last_sent_size, chan_state);
-		
-		/* Refactor idea- fill_packet_data()
-		send_data()
-		interpret_response()
-		*/
-		short_read = (bytes_read < block_size);
-		
-		/* If less than 1024 bytes left in XMODEM_1K, switch to
-		 * an 128 byte to reduce overhead. */
-		if((flags == XMODEM_1K) && !using_128_blocks_in_1k && short_read)
+		if((bytes_read = data_out_fcn((char *) &tx_buffer[DATA], block_size, \
+			last_sent_size, chan_state)) < 0)
 		{
-			/* Does not alter flags byte to distinguish XMODEM_CRC
-			 * and XMODEM_1K with 128-byte packets. */
+			return CHANNEL_ERROR;
+		}
+		
+		/* If less than 1024 bytes left in XMODEM_1K, switch to 128 byte 
+		to reduce overhead. */
+		if((flags == XMODEM_1K) && ((size_t) bytes_read < block_size))
+		{
 			tx_buffer[START_CHAR] = SOH;
 			chksum_offset = CHKSUM_CRC;
-			using_128_blocks_in_1k = MODEM_TRUE;
 			block_size = 128;
 			packet_size = chksum_offset + 2;
-			
-			if(bytes_read >= 128)
-			{
-				short_read = 0;
-			}
+			flags = XMODEM_CRC;
 		}
 		
 		/* Pad a short packet. This also handles the case where the file
-		 * ends on a packet-size boundary (write CPMEOF for entire packet). */
-		if(short_read)
+		ends on a packet-size boundary (write CPMEOF for entire packet). */
+		if((size_t) bytes_read < block_size)
 		{
-			eof_detected = MODEM_TRUE;
-			/* printf("short read: %d\n", bytes_read); */
+			eof_detected = 1;
 			pad_buffer(&tx_buffer[DATA + bytes_read], block_size - bytes_read, CPMEOF);
-			/* printf("buffer padded\n"); */
 		}
 		
 		/* Generate the checksum/CRC. */
@@ -114,8 +98,7 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		}
 		else /* All other protocols use CRC. */
 		{
-			unsigned int crc16;
-			crc16 = generate_crc(&tx_buffer[DATA], block_size);
+			unsigned int crc16 = generate_crc(&tx_buffer[DATA], block_size);
 			
 			/* if sizeof(int) == 2, then 0xFF00 is unsigned int.
 			if sizeof(int) > 2, then 0xFF00 is int.
@@ -124,38 +107,34 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 			tx_buffer[chksum_offset + 1] = ((crc16 & (0x00FF)));
 		}
 		
-		/* Send the packet. Wait for any character. */
-		/* printf("sending data\n");   */
-		{
-			serial_snd((char *) tx_buffer, packet_size, serial_device);
-		}
-		/* printf("data sent\n"); */
+		/* Send the packet. Wait for any character. Protocol is 
+		completely receiver-driven (will not retransmit automatically 
+		without receiver intervention)- bail on timeout or hardware error. */
+		serial_snd((char *) tx_buffer, packet_size, serial_device);
 		serial_flush(serial_device);
-		ser_status = serial_rcv(&rx_code, 1, 60, serial_device);
-		
-		/* Protocol is completely receiver-driven (will not retransmit
-		automatically without receiver intervention)- bail on timeout
-		or hardware error. All four conditions are mutually exclusive. */
-		if(ser_status != SERIAL_NO_ERRORS)
+		if((ser_status = serial_rcv(&rx_code, 1, 60, serial_device)) != \
+			SERIAL_NO_ERRORS)
 		{
 			return serial_to_modem_error(ser_status);
                 }
-                else if(rx_code == ACK)
+                
+                /* Interpret the response. */
+                if(rx_code == ACK)
 		{
 			/* Increment the block number and negate the 
 			complement block number in one line. */
 			tx_buffer[COMP_BLOCK_NO] = ~(++tx_buffer[BLOCK_NO]);
 			last_sent_size = block_size;
 		}
-                else if(rx_code == CAN)
-		{
-			return SENT_CAN;
-		}
-		else /* if(rx_code == NAK) */
+		else if(rx_code == NAK)
 		{
 			last_sent_size = 0; /* Garbage. Resend. */
-			eof_detected = MODEM_FALSE; /* If NAK detected on 
+			eof_detected = 0; /* If NAK detected on 
 			last packet, it needs to be redone! */
+		}
+		else /* if(rx_code == CAN) */
+		{
+			return SENT_CAN;
 		}
 	}while(!eof_detected);
 	
@@ -166,18 +145,51 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 		char eot_char = EOT;
 		
 		serial_snd(&eot_char, 1, serial_device);
-		ser_status = serial_rcv(&rx_code, 1, 60, serial_device);
-	}while(ser_status == SERIAL_NO_ERRORS && !(rx_code == ACK || rx_code == CAN));
+		if((ser_status = serial_rcv(&rx_code, 1, 60, serial_device)) != \
+			SERIAL_NO_ERRORS)
+		{
+			return serial_to_modem_error(ser_status);
+		}
+	}while(!(rx_code == ACK || rx_code == CAN));
 	
-	if(ser_status != SERIAL_NO_ERRORS)
-	{
-		return serial_to_modem_error(ser_status);
-	}
-	else
-	{
-		return (rx_code == ACK) ? MODEM_NO_ERRORS : SENT_CAN;
-	}
+	return (rx_code == ACK) ? MODEM_NO_ERRORS : SENT_CAN;
 }
+
+MODEM_ERRORS xmodem_rx1(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
+	serial_handle_t serial_device, unsigned short flags)
+{
+	char tx_code;
+	unsigned int error_count = 0;
+	unsigned char expected_start_char, expected_block_no, expected_comp_block_no;
+	int eot_detected = 0;
+	OFFSET_NAMES chksum_offset;
+	SERIAL_STATUS ser_status;
+	
+	
+	tx_code = (flags == XMODEM) ? NAK : ASCII_C;
+	expected_start_char = (flags == XMODEM_1K) ? STX : SOH;
+	expected_block_no = 0x01;
+	expected_comp_block_no = 0xFE;
+	chksum_offset = (flags == XMODEM_1K) ? X1K_CRC : CHKSUM_CRC;
+	serial_snd(&tx_code, 1, serial_device);
+	
+	do{
+		MODEM_ERRORS modem_status;
+		
+		if((modem_status = wait_for_tx_response(serial_device, flags)) != MODEM_NO_ERRORS)
+		{
+			return modem_status;
+		}
+		
+	}while(!eot_detected);
+	
+	tx_code = ACK; 
+	ser_status = serial_snd(&tx_code, 1, serial_device);
+	/* Discard for now, but perhaps add an error code for failure at end? */
+	
+	return MODEM_NO_ERRORS;	
+}
+
 
 /** MODEM_RX- receive file(s) from external equipment. **/
 MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
@@ -374,7 +386,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 					{
 						tx_code = CAN;
 						serial_snd(&tx_code, 1, serial_device);
-						return FILE_ERROR;
+						return CHANNEL_ERROR;
 					}
 					else
 					{
@@ -465,37 +477,6 @@ static void pad_buffer(unsigned char * buf, size_t bufsiz, unsigned char val)
 	}
 }
 
-
-/* static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, unsigned short mode)
-{
-	packet_offsets[START_CHAR] = packet;
-	packet_offsets[BLOCK_NO] = packet + 1;
-	packet_offsets[COMP_BLOCK_NO] = packet + 2;
-	packet_offsets[DATA] = packet + 3;
-	switch(mode & 0x07)
-	{
-		case YMODEM_1K:
-		case XMODEM_1K:
-			packet_offsets[CHKSUM_CRC] = packet + 1027;
-			packet_offsets[END] = packet + 1029;
-			break;
-		
-		case YMODEM:
-		case XMODEM_CRC:
-			packet_offsets[CHKSUM_CRC] = packet + 131;
-			packet_offsets[END] = packet + 133;
-			break;
-		
-		case XMODEM:
-			packet_offsets[CHKSUM_CRC] = packet + 131;
-			packet_offsets[END] = packet + 132;
-			break;
-			
-		case YMODEM_G:
-			break;
-	}
-}*/
-
 static void purge(serial_handle_t serial_dev)
 {
 	SERIAL_STATUS timeout_status = SERIAL_NO_ERRORS;
@@ -540,6 +521,16 @@ static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned sh
 	}
 	
 	return serial_to_modem_error(ser_status);
+}
+
+static MODEM_ERRORS wait_for_tx_response(serial_handle_t serial_device, unsigned short flags)
+{
+	return MODEM_NO_ERRORS;
+}
+
+static OFFSET_NAMES get_checksum_offset(unsigned short flags)
+{
+	return (flags == XMODEM_1K) ? X1K_CRC : CHKSUM_CRC;
 }
 
 /* static int wait_for_rx_ack(serial_handle_t serial_device)
