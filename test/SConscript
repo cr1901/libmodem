@@ -5,17 +5,16 @@ Import('env', 'build_dir', 'pi_objs')
 
 if 'test' in COMMAND_LINE_TARGETS:
     if env['TARGET_OS'] in ['win32']:
-        unittest_obj = env.Object(Split('unittest.c serprim.c'), CPPPATH=Dir('#/src'))
+        ansi_cflags = env['CCFLAGS']
+        relaxed_cflags = ansi_cflags.replace('pedantic-errors', 'pedantic')
+        unittest_obj = env.Object(Split('unittest.c serprim.c'), CPPPATH=Dir('#/src'), CCFLAGS=relaxed_cflags)
         unittest = env.Program(unittest_obj + pi_objs)
         # Depend on the runner to ensure that it's built before running it - Note: using abspath.
         test_alias = env.Alias('test', [unittest], unittest[0].abspath)
-        
         # Simply required.  Without it, 'test' is never considered out of date.
-        if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
-            AlwaysBuild(test_alias)
+        AlwaysBuild(test_alias)
     else:
         print 'Test suite not available for chosen target. (' + env['TARGET_OS'] + ')'
         Exit(1)
-    
-    env.NoClean(pi_objs)
 
+    env.NoClean(pi_objs)
