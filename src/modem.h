@@ -1,35 +1,30 @@
 /* 08.15.2012 01:21:18
  * MODEM.H
- * 
+ *
  * Copyright 2012 William D. Jones <thor0505@comcast.net>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
- * 
- * 
+ *
+ *
  */
 #ifndef MODEM_H
 #define MODEM_H
 
-/* #include <stdio.h>
-#include <stdint.h>
-#include <time.h> */
-
 #include "files.h"
 #include "serial.h"
-#include "timewrap.h"
 /* #include "config.h"
 #include "usr_def.h" */
 
@@ -111,7 +106,7 @@ typedef enum xfer_modes
 typedef struct modem_status{
 	unsigned long bytes_transferred;
 	unsigned short time_elapsed;
-	char * filename;	
+	char * filename;
 }MODEM_STATUS;
 
 /* typedef struct xmodem_packet
@@ -137,12 +132,12 @@ typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, v
   * status (use counter variables to check what still needs to be sent/received).
   * Callback- Routine to send single byte. */
   /* flags- XYZ Modem, ASYNC. */
-  
-  /* Check timeout- TIMER INTERRUPT required... how to handle referencing variables? 
+
+  /* Check timeout- TIMER INTERRUPT required... how to handle referencing variables?
    * Start timer, exec rcv... if no error, stop/reset timer, else loop (if timeout by end, break). */
 /* session_function(parameters); */
 
-/* Wrapper function for all possible xfer modes (wrapper.c). 
+/* Wrapper function for all possible xfer modes (wrapper.c).
 (Possibly open serial port as well?) */
 /* uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
@@ -157,7 +152,7 @@ uint16_t kermit_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags)
 uint16_t kermit_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
 
 /* xmodem_tx, xmodem_rx, xmodem_crc_tx, etc... or
-return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards 
+return NOT_IMPLEMENTED status if user optimizes for space. Leaning towards
 xmodem_tx, xmodem_rx, ymodem_tx, ymodem_rx, etc... */
 
 /* Change data sizes all to uint32_t? */
@@ -169,7 +164,7 @@ unsigned short generate_crc(unsigned char * data, size_t size);
  * get other small things done within the context of an application
  * program (NOT the OS- let the OS handle multitasking with it's own
  * mechanisms).
- * Also includes an error handler 
+ * Also includes an error handler
  * Examples... update a status bar/report errors using stdout. */
 /* extern void idle(MODEM_STATUS curr_status);
 extern void error_handler(MODEM_STATUS curr_status); */
