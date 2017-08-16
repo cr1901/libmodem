@@ -14,7 +14,7 @@ if env['TARGET_OS'] == 'win32':
 
 elif env['TARGET_OS'] == 'hdmi2usb-lm32':
     env = env.Clone(tools = ['hdmi2usb-lm32'], \
-        CCFLAGS = '-ansi -Wall -Wextra -pedantic-errors')
+        CCFLAGS = '-Wall -Wextra -pedantic-errors -std=c99')
     env.Append(CPPPATH = [
         env['HDMI2USB']['SOC_DIRECTORY'] + '/software/include/base',
         env['HDMI2USB']['SOC_DIRECTORY'] + '/software/include',
