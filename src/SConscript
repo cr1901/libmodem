@@ -15,10 +15,10 @@ if env['TARGET_OS'] == 'dos':
     env.Append(CPPPATH = ['#/../PICTOR'])
     env.Append(LIBPATH = ['#/../PICTOR'])
     libname = 'PICTOR' + string.capitalize(env.subst('$MEMMODEL')) + 'W'
-    
+
     if not env.GetOption('clean'):
         conf = Configure(env)
-        
+
         if not conf.CheckLibWithHeader(libname, 'COMLIB.H', 'c'):
             print "PICTOR Library required for DOS target! "
             "Install in the same directory where the top level "
@@ -26,10 +26,10 @@ if env['TARGET_OS'] == 'dos':
             Exit(1)
 
         env = conf.Finish()
-        
+
 #PI- Platform Independent, PD- Platform Dependent
 xfer_exe_src = Split('trxcom.c')
-pi_src = [Dir('.').File(src) for src in Split('serial.c xmodem.c ymodem.c')]
+pi_src = [Dir('.').File(src) for src in Split('serial.c xmodem.c')]
 pd_src = [Dir(env['TARGET_OS']).File(src) for src in Split('serprim.c')]
 env.AppendUnique(CPPPATH = '.') #We are using a variant directory.
 #This ensures both variant and orig directory are included.
@@ -38,22 +38,9 @@ env.AppendUnique(CPPPATH = '.') #We are using a variant directory.
 pi_objs = env.Object(pi_src) #We'll need pi_src
 core_lib = env.Library('modem', pd_src + pi_objs)
 Default(core_lib)
-#core_exe = env.Program('TRXCOM', core_src_files + core_platform_dependent)
-
-
-#Now build the platform-dependent files (if any)...
-
 
 #Install if the host OS matches target OS
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
     env.Install(env['HOST_INSTALL_DIR'], [core_lib])
-else:
-    pass
-    #env.Xfer('dummy', 'TRXCOM')
-
-#Or install over a serial line
-#if 'xfer' in COMMAND_LINE_TARGETS:
-#    env.Xfer('dummy', 'TRXCOM')
 
 Return('pi_objs')
-

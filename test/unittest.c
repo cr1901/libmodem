@@ -274,7 +274,6 @@ MU_TEST(test_xmodem_packet)
 	}
 
 	mu_check(rx_okay);
-
 }
 
 MU_TEST_SUITE(ser_test_suite)

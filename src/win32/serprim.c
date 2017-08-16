@@ -1,12 +1,10 @@
 #include "serial.h"
 #include "serprim.h"
 
-
-/** Begin Windows defines... **/
 /* Serial routines ripped from:
- * http://www.robbayer.com/files/serial-win.pdf
- * without whose permission this was made possible :)...
- * Seriously, thanks! */
+http://www.robbayer.com/files/serial-win.pdf
+without whose permission this was made possible :)...
+Seriously, thanks! */
 #include <windows.h>
 #include <stdio.h> /* For sprintf. Since we're on windows, we should use it. */
 #include <stddef.h> /* For NULL. */

@@ -1,6 +1,8 @@
 #ifndef SERPRIM_H
 #define SERPRIM_H
 
+#include "serial.h"
+
 serial_handle_t open_handle(unsigned short port_no);
 int handle_valid(serial_handle_t port);
 int init_port(serial_handle_t port, unsigned long baud_rate);

@@ -11,31 +11,15 @@ hosted C. */
 #include "serial.h"
 #include "serprim.h"
 
-
-/* The buffers used to test the modem routines. May be split from file_bufs
-eventually. */
-/* extern char local_tx_file_buf[STATIC_BUFSIZ];
-extern char local_rx_file_buf[STATIC_BUFSIZ];
-extern char remote_tx_file_buf[STATIC_BUFSIZ];
-extern char remote_rx_file_buf[STATIC_BUFSIZ]; */
-
-
-/* Simulate device buffers at some point- some UARTs (glares at 8250) don't have one! */
-/* extern char local_tx_device_buf[STATIC_BUFSIZ];
-extern char local_rx_device_buf[STATIC_BUFSIZ];
-extern char remote_tx_device_buf[STATIC_BUFSIZ];
-extern char remote_rx_device_buf[STATIC_BUFSIZ]; */
-
 /* Line is modelled by a an array- abstract representation of characters being
-sent down the wire before being acknowledged by receiever. When appropriate, perhaps
-model individual tx/rx using multitasking? *shrug* */
+sent down the wire before being acknowledged by receiever.
+TODO: When appropriate, perhaps model individual tx/rx using multitasking? */
 char local_tx_line[STATIC_BUFSIZ];
 char local_rx_line[STATIC_BUFSIZ];
 char * remote_tx_line = local_rx_line; /* Connect the virtual serial lines to each other. */
 char * remote_rx_line = local_tx_line;
 
 PORT_DESC port_model[3] = { {NULL, NULL, 0, 0, 0, 0, 0, 0, 0} };
-
 
 /* Needed as dummy target of void ptr at some point? */
 /* static int local_handle = 0;

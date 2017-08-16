@@ -11,15 +11,8 @@ static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned sh
 static MODEM_ERRORS wait_for_tx_response(serial_handle_t serial_device, unsigned short flags);
 static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status);
 static OFFSET_NAMES get_checksum_offset(unsigned short flags);
-/* static MODEM_ERRORS verify_packet(unsigned char * buf, unsigned short flags); */
-/* static void assemble_packet(XMODEM_OFFSETS * offsets, )
-static void disassemble_packet() */
-/* Implement this! */
 
 
-
-
-/** MODEM_RX- transmit file(s) to external equipment. **/
 /* Portions of this code depend on having a consistent representation of values
 for a given bit pattern between machines, which is only guaranteed for
 unsigned types.
@@ -27,7 +20,6 @@ Additionally, some portions of this code rely on:
 unsigned constant literal cast (particularly hex values >= 0x80), and
 unsigned overflow semantics (checksum and CRC). Therefore, this function
 expects an unsigned char * buffer as input. */
-
 MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void * chan_state, \
 	serial_handle_t serial_device, unsigned short flags)
 {
@@ -41,7 +33,7 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	int last_sent_size = 0;
 
 	/* Flush the device buffer in case some characters were remaining
-	 * to prevent glitches. */
+	to prevent glitches. */
 	serial_flush(serial_device);
 	if((modem_status = wait_for_rx_ready(serial_device, flags)) != \
 		MODEM_NO_ERRORS)
@@ -150,6 +142,7 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 	return (rx_code == ACK) ? MODEM_NO_ERRORS : SENT_CAN;
 }
 
+/* Potential reimplementation of xmodem_rx. */
 MODEM_ERRORS xmodem_rx1(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
 	serial_handle_t serial_device, unsigned short flags)
 {
@@ -186,12 +179,11 @@ MODEM_ERRORS xmodem_rx1(I_channel data_in_fcn, unsigned char * rx_buffer, void *
 }
 
 
-/** MODEM_RX- receive file(s) from external equipment. **/
 MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
 	serial_handle_t serial_device, unsigned short flags)
 {
 	/* Array of pointers to the six packet section offsets within the
-	 * buffer holding the packet. */
+	buffer holding the packet. */
 	char tx_code = NUL;
 	unsigned int error_count = 0;
 	unsigned char expected_start_char_1 = 0, expected_start_char_2 = 0, \
