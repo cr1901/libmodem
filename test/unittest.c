@@ -29,6 +29,7 @@ char local_source[STATIC_BUFSIZ] = {'\0'};
 char local_sink[STATIC_BUFSIZ] = {'\0'};
 char remote_source[STATIC_BUFSIZ] = {'\0'};
 char remote_sink[STATIC_BUFSIZ] = {'\0'};
+char cpmeof_buf[1024] = {CPMEOF};
 
 unsigned char temp_buf[X1K_END + 1]; /* A dummy buffer to make the xmodem routines happy. */
 
@@ -45,7 +46,8 @@ static int buf_cmp(char * buf1, char * buf2, int len);
 static void * buf_cpy(char * dest, char * src, size_t len);
 static void buf_clr(char * buf, unsigned int num_chars);
 
-
+static void verify_packet(char * packet, unsigned char packet_no, char * payload, \
+	unsigned int payload_len, int using_1k);
 
 /* Setup/teardown functions for each test. */
 /* Test setup clears all buffers and assumes a working serial port. */
@@ -233,18 +235,13 @@ MU_TEST(test_xmodem_packet)
 
 	/* Intercept the packet directly and test the transmit routine! */
 	serial_rcv(rx_opts.data_sink, CHKSUM_END, 1, NULL, remote_port);
-	mu_assert_int_eq(SOH, rx_opts.data_sink[0]);
-	mu_assert_int_eq(1, rx_opts.data_sink[1]);
-	mu_assert_int_eq(0xFE, (unsigned char) rx_opts.data_sink[2]);
-	mu_check(buf_cmp(&rx_opts.data_sink[3], tx_opts.data_source, 127) == 1);
-	mu_assert_int_eq(CPMEOF, (unsigned char) rx_opts.data_sink[130]);
+	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 127, 0);
 
 	/* Reset the port state. */
 	VOID_TO_PORT(local_port, bad_flush) = 0;
 	serial_flush(local_port);
 	VOID_TO_PORT(local_port, bad_flush) = 1;
 	serial_flush(remote_port);
-
 
 	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
 	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
@@ -257,22 +254,33 @@ MU_TEST(test_xmodem_packet)
 	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
 
 	serial_rcv(rx_opts.data_sink, 2*CHKSUM_END, 1, NULL, remote_port);
-	mu_assert_int_eq(SOH, rx_opts.data_sink[0]);
-	mu_assert_int_eq(1, rx_opts.data_sink[1]);
-	mu_assert_int_eq(0xFE, (unsigned char) rx_opts.data_sink[2]);
-	mu_check(buf_cmp(&rx_opts.data_sink[3], tx_opts.data_source, 128) == 1);
+	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 128, 0);
+	verify_packet(&rx_opts.data_sink[CHKSUM_END], 2, NULL, 0, 0);
+}
 
-	mu_assert_int_eq(SOH, rx_opts.data_sink[CHKSUM_END]);
-	mu_assert_int_eq(2, rx_opts.data_sink[CHKSUM_END + 1]);
-	mu_assert_int_eq(0xFD, (unsigned char) rx_opts.data_sink[CHKSUM_END + 2]);
-	mu_check(buf_cmp(&rx_opts.data_sink[3], tx_opts.data_source, 128) == 1);
-
-	for(count = 0; (rx_okay && count < 128); count++)
+static void verify_packet(char * packet, unsigned char packet_no, char * payload,
+	unsigned int payload_len, int using_1k)
+{
+	unsigned int max_payload_len = using_1k ? 1024 : 128;
+	mu_assert_int_eq(SOH, packet[0]);
+	mu_assert_int_eq(packet_no, packet[1]);
+	mu_assert_int_eq((unsigned char) ~packet_no, (unsigned char) packet[2]);
+	if(payload != NULL)
 	{
-		rx_okay = (rx_opts.data_sink[CHKSUM_END + 3 + count] == CPMEOF);
+		mu_check(buf_cmp(&packet[3], payload, payload_len) == 1);
 	}
 
-	mu_check(rx_okay);
+	/* Verify EOF at end of packet if necessary. */
+	{
+		int rx_okay = 1;
+		int count;
+		int eof_bytes_left = max_payload_len - payload_len;
+		for(count = 0; (rx_okay && count < eof_bytes_left); count++)
+		{
+			rx_okay = (packet[payload_len + count + 3] == CPMEOF);
+		}
+		mu_check(rx_okay);
+	}
 }
 
 MU_TEST_SUITE(ser_test_suite)
