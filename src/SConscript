@@ -1,31 +1,9 @@
 #src SConscript (Base Executable and Library)
-import string
-
 Import('env')
 
 platform_sanity_checks(env) #Test for situations where compilation will surely fail
 perform_compiler_configuration(env, 0) #Get information about the environment
-
-extra_platform_dependent = []
-
-#If external libraries are required for the base-executable, check for them now.
-#This will be removed at some point to remove extern lib dependencies, so
-#the filename path capitalization remains unchanged.
-if env['TARGET_OS'] == 'dos':
-    env.Append(CPPPATH = ['#/../PICTOR'])
-    env.Append(LIBPATH = ['#/../PICTOR'])
-    libname = 'PICTOR' + string.capitalize(env.subst('$MEMMODEL')) + 'W'
-
-    if not env.GetOption('clean'):
-        conf = Configure(env)
-
-        if not conf.CheckLibWithHeader(libname, 'COMLIB.H', 'c'):
-            print "PICTOR Library required for DOS target! "
-            "Install in the same directory where the top level "
-            "of this source tree resides."
-            Exit(1)
-
-        env = conf.Finish()
+check_platform_specific_libs(env)
 
 #PI- Platform Independent, PD- Platform Dependent
 xfer_exe_src = Split('trxcom.c')

@@ -1,6 +1,6 @@
 #main SConstruct
 EnsurePythonVersion(2, 7)
-EnsureSConsVersion(2, 5)
+EnsureSConsVersion(2, 3)
 
 #Read the variables, add them to the environment.
 print 'Reading settings.py to define current build'
@@ -13,6 +13,7 @@ vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
     'win32', allowed_values=('win32', 'dos', 'hdmi2usb-lm32')))
 vars.Add(PathVariable('EXTRA_PATH', 'Path to compilers if autodetection fails.', '#/bin'))
 vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/bin'))
+vars.Add(PathVariable('PICTOR', 'Path to SoftCircuits PICTOR library', '#/../PICTOR'))
 vars.Add(PathVariable('HDMI2USB_BUILD', 'Path to HDMI2USB build root (should have "software" as subdirectory)', None))
 
 """Use Update(env) to add variables to existing environment:

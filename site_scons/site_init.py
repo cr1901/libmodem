@@ -1,3 +1,5 @@
+import string
+
 def perform_compiler_configuration(env, freestanding):
     if not env.GetOption('clean') and not env.GetOption('help'):
         conf = Configure(env, config_h='cc_config.h', custom_tests=\
@@ -50,3 +52,21 @@ def platform_sanity_checks(env):
             Exit(1)
 
         conf.Finish()
+
+def check_platform_specific_libs(env):
+    #If external libraries are required for the base-executable, check for them now.
+    conf = Configure(env)
+
+    if env['TARGET_OS'] == 'dos':
+        env.Append(CPPPATH = [Dir(env['PICTOR'])])
+        env.Append(LIBPATH = [Dir(env['PICTOR'])])
+        libname = 'PICTOR' + string.capitalize(env.subst('$MEMMODEL')) + 'W'
+
+        if not env.GetOption('clean'):
+            if not conf.CheckLibWithHeader(libname, 'COMLIB.H', 'c'):
+                print "PICTOR Library required for DOS target! "
+                "Install in the same directory where the top level "
+                "of this source tree resides."
+                Exit(1)
+
+    env = conf.Finish()

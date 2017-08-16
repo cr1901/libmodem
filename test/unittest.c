@@ -279,7 +279,6 @@ MU_TEST(test_xmodem_packet)
 MU_TEST_SUITE(ser_test_suite)
 {
 	MU_SUITE_CONFIGURE(&ser_test_setup, &ser_test_teardown);
-
 	MU_RUN_TEST(test_ser_tx);
 	MU_RUN_TEST(test_ser_tx_hw_error_bad_write);
 
