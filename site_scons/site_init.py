@@ -7,8 +7,8 @@ def perform_compiler_configuration(env, freestanding):
         conf.CheckType('double')
         #conf.CheckFunc('difftime', '#include <time.h>'):
         conf.CheckDeclaration('difftime', '#include <time.h>')
-        conf.CheckCharBit()    
-            
+        conf.CheckCharBit()
+
         conf.Finish()
 
 def check_char_bit(context):
@@ -22,13 +22,15 @@ def check_char_bit(context):
         {
         return 0;
         }""", '.c')
-    
+
     SCons.Conftest._Have(context, 'HAVE_CHAR_BIT_8', ret, 'Set to 1 if the target has an 8-bit character.')
     context.Result(ret)
     return ret
-        
 
-platform_signatures = {'dos': ['__DOS__'], 'win32': ['__WINDOWS__', '_WIN32']}
+
+platform_signatures = {'dos': ['__DOS__'],
+    'win32': ['__WINDOWS__', '_WIN32'],
+    'hdmi2usb-lm32': ['__lm32__']}
 
 def platform_sanity_checks(env):
     if not env.GetOption('clean') and not env.GetOption('help'):
@@ -36,7 +38,7 @@ def platform_sanity_checks(env):
         if not conf.CheckCC():
             print 'Error: C compiler does not work!'
             Exit(1)
-        
+
         for sig in platform_signatures[env['TARGET_OS']]:
             if conf.CheckDeclaration(sig):
                 break
@@ -46,5 +48,5 @@ def platform_sanity_checks(env):
                 + 'Check platform flags!'.format(env['TOOLS'], \
                 env['TARGET_OS'])
             Exit(1)
-            
+
         conf.Finish()

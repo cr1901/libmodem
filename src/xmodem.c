@@ -475,7 +475,6 @@ static void purge(serial_handle_t serial_dev)
 
 static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
 {
-	time_t start,end;
 	unsigned int elapsed_time;
 	SERIAL_STATUS ser_status = SERIAL_NO_ERRORS;
 	int expected_rx_detected = MODEM_FALSE;

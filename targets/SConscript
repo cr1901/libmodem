@@ -10,7 +10,20 @@ if env['TARGET_OS'] == 'win32':
         CCFLAGS='-ansi -Wall -Wextra -pedantic-errors')
     if env['BUILD_TYPE'] == 'Release':
     	    env.Append(CCFLAGS=' -Os')
-    env['CC'] ='i686-w64-mingw32-gcc'
+    env['CC'] ='i686-w64-mingw32-gcc' # Override gcc for path conflict reasons.
+
+elif env['TARGET_OS'] == 'hdmi2usb-lm32':
+    env = env.Clone(tools = ['hdmi2usb-lm32'], \
+        CCFLAGS = '-ansi -Wall -Wextra -pedantic-errors')
+    env.Append(CPPPATH = [
+        env['HDMI2USB']['SOC_DIRECTORY'] + '/software/include/base',
+        env['HDMI2USB']['SOC_DIRECTORY'] + '/software/include',
+        env['HDMI2USB']['SOC_DIRECTORY'] + '/software/common',
+        env['HDMI2USB']['BUILDINC_DIRECTORY']]
+    )
+    env.Append(CFLAGS = ' -Os ' + env['HDMI2USB']['CPUFLAGS'] + ' -fomit-frame-pointer -Wall -fno-builtin -nostdinc')
+    env.Append(CCFLAGS = ' -fexceptions -Wstrict-prototypes -Wold-style-definition -Wmissing-prototypes')
+    env.Append(CXXFLAGS = ' -std=c++11' + env['HDMI2USB']['SOC_DIRECTORY'] + '/software/include/basec++ -fexceptions -fno-rtti -ffreestanding' )
 
 #However, if the tools to build do NOT exist, execute a script to create them.
 elif env['TARGET_OS'] == 'dos':

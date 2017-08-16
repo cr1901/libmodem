@@ -1,6 +1,6 @@
 #main SConstruct
 EnsurePythonVersion(2, 7)
-EnsureSConsVersion(2, 2)
+EnsureSConsVersion(2, 5)
 
 #Read the variables, add them to the environment.
 print 'Reading settings.py to define current build'
@@ -10,9 +10,10 @@ vars.Add(EnumVariable('BUILD_TYPE', 'Set the build type for the current target',
     'Debug', allowed_values=('Debug', 'Release')))
 vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables.', '#/bin'))
 vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
-    'win32', allowed_values=('win32', 'dos')))
+    'win32', allowed_values=('win32', 'dos', 'hdmi2usb-lm32')))
 vars.Add(PathVariable('EXTRA_PATH', 'Path to compilers if autodetection fails.', '#/bin'))
 vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/bin'))
+vars.Add(PathVariable('HDMI2USB_BUILD', 'Path to HDMI2USB build root (should have "software" as subdirectory)', None))
 
 """Use Update(env) to add variables to existing environment:
 http://stackoverflow.com/questions/9744867/scons-how-to-add-a-new-command-line-variable-to-an-existing-construction-enviro"""
@@ -47,4 +48,3 @@ Clean('.', 'bin/' + env['TARGET_OS'])
 #SConscript(['SRC/GUI/SConscript'])
 
 #Additional help goes here...
-
