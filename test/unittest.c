@@ -78,6 +78,20 @@ void xmodem_test_setup()
 	rx_opts.sink_size = STATIC_BUFSIZ;
 	rx_opts.sink_pos = 0;
 	ser_test_setup();
+
+	/* Reset the port state. */
+	VOID_TO_PORT(local_port, bad_flush) = 0;
+	serial_flush(local_port);
+	/* The transmit routine
+	will flush its rx buffer occassionally. In the context of a simulation,
+	we need these flushes not to occur, because the rx buffer is filled with
+	simulated responses before the tx even starts. If serial_flush RV
+	is checked within the xmodem routine, add a test override macro. */
+	VOID_TO_PORT(local_port, bad_flush) = 1;
+	serial_flush(remote_port);
+
+	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
+	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
 }
 
 void xmodem_test_teardown()
@@ -220,13 +234,6 @@ MU_TEST(test_xmodem_packet)
 	rx_opts.data_source[0] = NAK;
 	rx_opts.data_source[1] = ACK;
 	rx_opts.data_source[2] = ACK;
-	rx_opts.data_source[3] = ACK; /* Fourth ACK is for boundary test. */
-
-	VOID_TO_PORT(local_port, bad_flush) = 1; /* The transmit routine
-	will flush its rx buffer occassionally. In the context of a simulation,
-	we need these flushes not to occur, because the rx buffer is filled with
-	simulated responses before the tx even starts. If serial_flush RV
-	is checked within the xmodem routine, add a test override macro. */
 
 	/* Check that the tx simulation is prepared properly. */
 	mu_check(serial_snd(rx_opts.data_source, 3, remote_port) == SERIAL_NO_ERRORS);
@@ -241,17 +248,15 @@ MU_TEST(test_xmodem_packet)
 	transmit routine. */
 	serial_rcv(rx_opts.data_sink, CHKSUM_END, 1, NULL, remote_port);
 	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 127, 1, 0);
+}
 
 
-	/* Reset the port state. */
-	VOID_TO_PORT(local_port, bad_flush) = 0;
-	serial_flush(local_port);
-	VOID_TO_PORT(local_port, bad_flush) = 1;
-	serial_flush(remote_port);
-
-	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
-	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
-	tx_opts.source_pos = 0;
+MU_TEST(test_xmodem_packet_boundary)
+{
+	rx_opts.data_source[0] = NAK;
+	rx_opts.data_source[1] = ACK;
+	rx_opts.data_source[2] = ACK;
+	rx_opts.data_source[3] = ACK; /* Fourth ACK is for boundary test. */
 
 	/* Now do a bounary test- 128/1024 byte file. Should result in 128/1024 bytes
 	extra data of CPMEOF appended. */
@@ -263,17 +268,15 @@ MU_TEST(test_xmodem_packet)
 	serial_rcv(rx_opts.data_sink, 2*CHKSUM_END, 1, NULL, remote_port);
 	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 128, 1, 0);
 	verify_packet(&rx_opts.data_sink[CHKSUM_END], 2, NULL, 0, 1, 0);
+}
 
 
-	/* Reset port state. */
-	VOID_TO_PORT(local_port, bad_flush) = 0;
-	serial_flush(local_port);
-	VOID_TO_PORT(local_port, bad_flush) = 1;
-	serial_flush(remote_port);
-
-	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
-	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
-	tx_opts.source_pos = 0;
+MU_TEST(test_xmodem_xfer_chksum)
+{
+	rx_opts.data_source[0] = NAK;
+	rx_opts.data_source[1] = ACK;
+	rx_opts.data_source[2] = ACK;
+	rx_opts.data_source[3] = ACK;
 
 	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
 	mu_assert_int_eq(NAK, VOID_TO_PORT(local_port, rx_line)[0]);
@@ -282,11 +285,10 @@ MU_TEST(test_xmodem_packet)
 	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
 	mu_check(xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM) == MODEM_NO_ERRORS);
 
-	//printf("%s", rx_opts.data_sink);
-
 	mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 255) == 1);
-	//mu_assert_int_eq(rx_opts.data_sink[255], CPMEOF);
+	mu_assert_int_eq(rx_opts.data_sink[255], CPMEOF);
 }
+
 
 static void verify_packet(char * packet, unsigned char packet_no, char * payload,
 	unsigned int payload_len, int using_chksum, int using_1k)
@@ -331,6 +333,8 @@ MU_TEST_SUITE(ser_test_suite)
 
 	MU_SUITE_CONFIGURE(&xmodem_test_setup, &xmodem_test_teardown);
 	MU_RUN_TEST(test_xmodem_packet);
+	MU_RUN_TEST(test_xmodem_packet_boundary);
+	MU_RUN_TEST(test_xmodem_xfer_chksum);
 }
 
 
