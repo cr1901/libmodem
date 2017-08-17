@@ -19,7 +19,7 @@ char local_rx_line[STATIC_BUFSIZ];
 char * remote_tx_line = local_rx_line; /* Connect the virtual serial lines to each other. */
 char * remote_rx_line = local_tx_line;
 
-PORT_DESC port_model[3] = { {NULL, NULL, 0, 0, 0, 0, 0, 0, 0} };
+port_desc_t port_model[3] = { {NULL, NULL, 0, 0, 0, 0, 0, 0, 0} };
 
 /* Needed as dummy target of void ptr at some point? */
 /* static int local_handle = 0;
@@ -78,7 +78,7 @@ int write_data(serial_handle_t port, char * data, unsigned int num_bytes)
 		unsigned int curr_offset = VOID_TO_PORT(port, buf_pos_tx);
 		for(count = 0; count < num_bytes; count++)
 		{
-			((PORT_DESC *) port)->tx_line[curr_offset + count] = data[count];
+			((port_desc_t *) port)->tx_line[curr_offset + count] = data[count];
 		}
 
 		VOID_TO_PORT(port, buf_pos_tx) += num_bytes;
@@ -108,7 +108,7 @@ int read_data(serial_handle_t port, char * data, unsigned int num_bytes, int tim
 		unsigned int curr_offset = VOID_TO_PORT(port, buf_pos_rx);
 		for(count = 0; count < num_bytes; count++)
 		{
-			 data[count] = ((PORT_DESC *) port)->rx_line[curr_offset + count];
+			 data[count] = ((port_desc_t *) port)->rx_line[curr_offset + count];
 		}
 
 		VOID_TO_PORT(port, buf_pos_rx) += num_bytes;
@@ -141,7 +141,7 @@ int flush_device(serial_handle_t port)
 		unsigned int count;
 		for(count = 0; count < STATIC_BUFSIZ; count++)
 		{
-			((PORT_DESC *) port)->rx_line[count] = '\0';
+			((port_desc_t *) port)->rx_line[count] = '\0';
 		}
 		VOID_TO_PORT(port, buf_pos_rx) = 0;
 	}

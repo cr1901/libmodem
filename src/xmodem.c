@@ -7,10 +7,10 @@ static void pad_buffer(unsigned char * buf, size_t bufsiz, unsigned char val);
 /* const doesn't work due to some weird rules in C... */
 /* static void set_packet_offsets(unsigned char ** packet_offsets, unsigned char * packet, unsigned short mode); */
 static void purge(serial_handle_t serial_device);
-static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags);
-static MODEM_ERRORS wait_for_tx_response(serial_handle_t serial_device, unsigned short flags);
-static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status);
-static OFFSET_NAMES get_checksum_offset(unsigned short flags);
+static modem_errors_t wait_for_rx_ready(serial_handle_t serial_device, xmodem_xfer_mode_t flags);
+static modem_errors_t wait_for_tx_response(serial_handle_t serial_device, xmodem_xfer_mode_t flags);
+static modem_errors_t serial_to_modem_error(serial_status_t status);
+static offset_names_t get_checksum_offset(unsigned short flags);
 
 
 /* Portions of this code depend on having a consistent representation of values
@@ -20,13 +20,13 @@ Additionally, some portions of this code rely on:
 unsigned constant literal cast (particularly hex values >= 0x80), and
 unsigned overflow semantics (checksum and CRC). Therefore, this function
 expects an unsigned char * buffer as input. */
-MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void * chan_state, \
-	serial_handle_t serial_device, unsigned short flags)
+modem_errors_t xmodem_tx(output_channel_t data_out_fcn, unsigned char * tx_buffer, void * chan_state, \
+	serial_handle_t serial_device, xmodem_xfer_mode_t flags)
 {
 	char rx_code = NUL;
-	MODEM_ERRORS modem_status = 0;
-	SERIAL_STATUS ser_status = 0;
-	OFFSET_NAMES chksum_offset;
+	modem_errors_t modem_status = 0;
+	serial_status_t ser_status = 0;
+	offset_names_t chksum_offset;
 	/* Logic variables. */
 	int eof_detected = 0;
 	size_t block_size, packet_size; /* Check to see if EOF was reached using bytes_read */
@@ -143,15 +143,15 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 }
 
 /* Potential reimplementation of xmodem_rx. */
-MODEM_ERRORS xmodem_rx1(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
+modem_errors_t xmodem_rx1(input_channel_t data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
 	serial_handle_t serial_device, unsigned short flags)
 {
 	char tx_code;
 	unsigned int error_count = 0;
 	unsigned char expected_start_char, expected_block_no, expected_comp_block_no;
 	int eot_detected = 0;
-	OFFSET_NAMES chksum_offset;
-	SERIAL_STATUS ser_status;
+	offset_names_t chksum_offset;
+	serial_status_t ser_status;
 
 
 	tx_code = (flags == XMODEM) ? NAK : ASCII_C;
@@ -162,7 +162,7 @@ MODEM_ERRORS xmodem_rx1(I_channel data_in_fcn, unsigned char * rx_buffer, void *
 	serial_snd(&tx_code, 1, serial_device);
 
 	do{
-		MODEM_ERRORS modem_status;
+		modem_errors_t modem_status;
 
 		if((modem_status = wait_for_tx_response(serial_device, flags)) != MODEM_NO_ERRORS)
 		{
@@ -179,8 +179,8 @@ MODEM_ERRORS xmodem_rx1(I_channel data_in_fcn, unsigned char * rx_buffer, void *
 }
 
 
-MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
-	serial_handle_t serial_device, unsigned short flags)
+modem_errors_t xmodem_rx(input_channel_t data_in_fcn, unsigned char * rx_buffer, void * chan_state, \
+	serial_handle_t serial_device, xmodem_xfer_mode_t flags)
 {
 	/* Array of pointers to the six packet section offsets within the
 	buffer holding the packet. */
@@ -191,9 +191,9 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 	/* Logic variables. */
 	int eot_detected = 0, using_128_blocks_in_1k = 0;
 	size_t bytes_written;
-	MODEM_ERRORS modem_status;
-	SERIAL_STATUS ser_status;
-	OFFSET_NAMES chksum_offset, packet_end;
+	modem_errors_t modem_status;
+	serial_status_t ser_status;
+	offset_names_t chksum_offset, packet_end;
 	/* int in_bufsiz; */
 
 
@@ -300,7 +300,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				}
 			}
 
-			/* These are guaranteed to be positive- see enum OFFSET_NAMES */
+			/* These are guaranteed to be positive- see enum offset_names_t */
 			expected_size = packet_end - BLOCK_NO;
 			data_size = chksum_offset - DATA;
 			data_plus_crc_size = packet_end - DATA;
@@ -444,17 +444,17 @@ static void pad_buffer(unsigned char * buf, size_t bufsiz, unsigned char val)
 
 static void purge(serial_handle_t serial_dev)
 {
-	SERIAL_STATUS timeout_status = SERIAL_NO_ERRORS;
+	serial_status_t timeout_status = SERIAL_NO_ERRORS;
 	char dummy_byte;
 	do{
 		timeout_status = serial_rcv(&dummy_byte, 1, 1, NULL, serial_dev);
 	}while(timeout_status != SERIAL_TIMEOUT);
 }
 
-static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned short flags)
+static modem_errors_t wait_for_rx_ready(serial_handle_t serial_device, xmodem_xfer_mode_t flags)
 {
 	unsigned int elapsed_time;
-	SERIAL_STATUS ser_status = SERIAL_NO_ERRORS;
+	serial_status_t ser_status = SERIAL_NO_ERRORS;
 	int expected_rx_detected = 0;
 	char rx_code = NUL;
 
@@ -486,12 +486,12 @@ static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned sh
 	return serial_to_modem_error(ser_status);
 }
 
-static MODEM_ERRORS wait_for_tx_response(serial_handle_t serial_device, unsigned short flags)
+static modem_errors_t wait_for_tx_response(serial_handle_t serial_device, xmodem_xfer_mode_t flags)
 {
 	return MODEM_NO_ERRORS;
 }
 
-static OFFSET_NAMES get_checksum_offset(unsigned short flags)
+static offset_names_t get_checksum_offset(unsigned short flags)
 {
 	return (flags == XMODEM_1K) ? X1K_CRC : CHKSUM_CRC;
 }
@@ -503,9 +503,9 @@ static OFFSET_NAMES get_checksum_offset(unsigned short flags)
 
 } */
 
-static MODEM_ERRORS serial_to_modem_error(SERIAL_STATUS status)
+static modem_errors_t serial_to_modem_error(serial_status_t status)
 {
-	MODEM_ERRORS equiv_status;
+	modem_errors_t equiv_status;
 	switch(status)
 	{
 		case SERIAL_NO_ERRORS:

@@ -6,9 +6,9 @@
 /* TODO: Serial close within routines? */
 
 /* At some point, baud_rate will likely become a struct of serial parameters. */
-SERIAL_STATUS serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr)
+serial_status_t serial_init(unsigned short port_no, unsigned long baud_rate, serial_handle_t * port_addr)
 {
-	SERIAL_STATUS ser_stat = SERIAL_NO_ERRORS;
+	serial_status_t ser_stat = SERIAL_NO_ERRORS;
 
 	(* port_addr) = open_handle(port_no);
 	if(!handle_valid((* port_addr)) || init_port((* port_addr), baud_rate))
@@ -20,9 +20,9 @@ SERIAL_STATUS serial_init(unsigned short port_no, unsigned long baud_rate, seria
 	return ser_stat;
 }
 
-SERIAL_STATUS serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
+serial_status_t serial_snd(char * data, unsigned int num_bytes, serial_handle_t port)
 {
-	SERIAL_STATUS ser_stat = SERIAL_NO_ERRORS;
+	serial_status_t ser_stat = SERIAL_NO_ERRORS;
 	if(!handle_valid(port) || write_data(port, data, num_bytes))
 	{
 		ser_stat = SERIAL_HW_ERROR;
@@ -31,9 +31,9 @@ SERIAL_STATUS serial_snd(char * data, unsigned int num_bytes, serial_handle_t po
 	return ser_stat;
 }
 
-SERIAL_STATUS serial_rcv(char * data, unsigned int num_bytes, int timeout, int * time_spent, serial_handle_t port)
+serial_status_t serial_rcv(char * data, unsigned int num_bytes, int timeout, int * time_spent, serial_handle_t port)
 {
-	SERIAL_STATUS ser_stat;
+	serial_status_t ser_stat;
 	int read_stat;
 
 	/* Guard against negative values being converted to ridiculous timeouts.
@@ -78,9 +78,9 @@ SERIAL_STATUS serial_rcv(char * data, unsigned int num_bytes, int timeout, int *
 	return ser_stat;
 }
 
-SERIAL_STATUS serial_close(serial_handle_t * port_addr)
+serial_status_t serial_close(serial_handle_t * port_addr)
 {
-	SERIAL_STATUS ser_stat = SERIAL_NO_ERRORS;
+	serial_status_t ser_stat = SERIAL_NO_ERRORS;
 	/* Both the flush and close must succeed to return without error. */
 
 	if(!handle_valid((* port_addr)) || (serial_flush((* port_addr)) != SERIAL_NO_ERRORS) \
@@ -96,9 +96,9 @@ SERIAL_STATUS serial_close(serial_handle_t * port_addr)
 	return ser_stat;
 }
 
-SERIAL_STATUS serial_flush(serial_handle_t port_addr)
+serial_status_t serial_flush(serial_handle_t port_addr)
 {
-	SERIAL_STATUS ser_stat = SERIAL_NO_ERRORS;
+	serial_status_t ser_stat = SERIAL_NO_ERRORS;
 
 	if(!handle_valid(port_addr) || flush_device(port_addr))
 	{

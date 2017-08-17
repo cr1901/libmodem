@@ -41,7 +41,7 @@ typedef enum offset_names
 	CRC_END=133,
 	X1K_CRC=1027,
 	X1K_END=1029
-}OFFSET_NAMES;
+}offset_names_t;
 
 /* Receive/Send status codes. */
 typedef enum modem_errors{
@@ -54,32 +54,26 @@ typedef enum modem_errors{
 	MODEM_HW_ERROR, /* Error reading, writing, or accessing serial device. */
 	MODEM_TIMEOUT,	/* No data was read in expected time frame. */
 	NOT_IMPLEMENTED
-}MODEM_ERRORS;
+}modem_errors_t;
 
 /* RX/TX input flags. */
 typedef enum xfer_modes
 {
 	XMODEM = 0,
 	XMODEM_CRC,
-	XMODEM_1K,
-	XMODEM7,
-	YMODEM,
-	YMODEM_1K,
-	YMODEM_G,
-	ZMODEM,
-	KERMIT
-}XFER_MODES;
+	XMODEM_1K
+}xmodem_xfer_mode_t;
 
-typedef int (* O_channel)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
-typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, void * const chan_state);
+typedef int (* output_channel_t)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
+typedef int (* input_channel_t)(const char * buf, const int buf_size, const int eof, void * const chan_state);
 
 /* Wrapper function for all possible xfer modes (wrapper.c).
 (Possibly open serial port as well?) */
 /* uint16_t modem_tx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags);
 uint16_t modem_rx(modem_file_t ** f_ptr, serial_handle_t device, uint8_t flags); */
 
-MODEM_ERRORS xmodem_tx(O_channel data_out, unsigned char * buf, void * chan_state, serial_handle_t device, const unsigned short flags);
-MODEM_ERRORS xmodem_rx(I_channel data_in, unsigned char * buf, void * chan_state, serial_handle_t device, const unsigned short flags);
+modem_errors_t xmodem_tx(output_channel_t data_out, unsigned char * buf, void * chan_state, serial_handle_t device, const xmodem_xfer_mode_t flags);
+modem_errors_t xmodem_rx(input_channel_t data_in, unsigned char * buf, void * chan_state, serial_handle_t device, const xmodem_xfer_mode_t flags);
 
 /* Change data sizes all to uint32_t? */
 unsigned char generate_chksum(unsigned char * data, size_t size);

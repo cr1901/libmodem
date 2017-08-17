@@ -23,9 +23,9 @@ typedef struct port_desc
 	int bad_flush;
 	unsigned int buf_pos_tx;
 	unsigned int buf_pos_rx;
-}PORT_DESC;
+}port_desc_t;
 
-#define VOID_TO_PORT(x, y) ((PORT_DESC *) x)->y
-extern PORT_DESC port_model[3];
+#define VOID_TO_PORT(x, y) ((port_desc_t *) x)->y
+extern port_desc_t port_model[3];
 
 #endif        /*  #ifndef SHARED_H  */
