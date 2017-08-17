@@ -20,6 +20,8 @@ typedef struct rx_params
 {
 	char * data_source;
 	char * data_sink;
+	size_t sink_size;
+	size_t sink_pos;
 	int force_resend;
 }RX_PARAMS;
 
@@ -39,7 +41,7 @@ RX_PARAMS rx_opts = {remote_source, remote_sink, 0};
 
 /* Data xfer fcns used as XMODEM callbacks. */
 static int data_out_fcn(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
-/* static int data_in_fcn(char * buf, const int request_size, const int last_sent_size, void * const chan_state); */
+static int data_in_fcn(char * buf, const int request_size, const int eot, void * const chan_state);
 /* Helper functions. */
 static void fill_buf(char * buf, unsigned int num_chars);
 static int buf_cmp(char * buf1, char * buf2, int len);
@@ -73,6 +75,8 @@ void xmodem_test_setup()
 	tx_opts.source_size = 0;
 	tx_opts.source_pos = 0;
 	rx_opts.force_resend = 0;
+	rx_opts.sink_size = STATIC_BUFSIZ;
+	rx_opts.sink_pos = 0;
 	ser_test_setup();
 }
 
@@ -233,9 +237,11 @@ MU_TEST(test_xmodem_packet)
 	fill_buf(tx_opts.data_source, tx_opts.source_size = 127);
 	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
 
-	/* Intercept the packet directly and test the transmit routine! */
+	/* Instead of testing xmodem_rx, intercept the packet directly and test the
+	transmit routine. */
 	serial_rcv(rx_opts.data_sink, CHKSUM_END, 1, NULL, remote_port);
 	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 127, 1, 0);
+
 
 	/* Reset the port state. */
 	VOID_TO_PORT(local_port, bad_flush) = 0;
@@ -245,6 +251,7 @@ MU_TEST(test_xmodem_packet)
 
 	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
 	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
+	tx_opts.source_pos = 0;
 
 	/* Now do a bounary test- 128/1024 byte file. Should result in 128/1024 bytes
 	extra data of CPMEOF appended. */
@@ -256,6 +263,29 @@ MU_TEST(test_xmodem_packet)
 	serial_rcv(rx_opts.data_sink, 2*CHKSUM_END, 1, NULL, remote_port);
 	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 128, 1, 0);
 	verify_packet(&rx_opts.data_sink[CHKSUM_END], 2, NULL, 0, 1, 0);
+
+
+	/* Reset port state. */
+	VOID_TO_PORT(local_port, bad_flush) = 0;
+	serial_flush(local_port);
+	VOID_TO_PORT(local_port, bad_flush) = 1;
+	serial_flush(remote_port);
+
+	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
+	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
+	tx_opts.source_pos = 0;
+
+	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
+	mu_assert_int_eq(NAK, VOID_TO_PORT(local_port, rx_line)[0]);
+
+	fill_buf(tx_opts.data_source, tx_opts.source_size = 255);
+	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
+	xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM);
+
+	printf("%s", rx_opts.data_sink);
+
+	//mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 255) == 1);
+	//mu_assert_int_eq(rx_opts.data_sink[255], CPMEOF);
 }
 
 static void verify_packet(char * packet, unsigned char packet_no, char * payload,
@@ -315,12 +345,33 @@ int main(int argc, char *argv[])
 }
 
 
+static int data_in_fcn(char * buf, const int request_size, const int eot, void * const chan_state)
+{
+	RX_PARAMS * const rx_params = (RX_PARAMS * const) chan_state;
+	int space_left;
+	int size_sent;
+
+	if(!eot)
+	{
+		space_left = rx_params->sink_size - rx_params->sink_pos;
+		size_sent = (request_size < space_left) ? request_size : space_left;
+		buf_cpy(rx_params->data_sink + rx_params->sink_pos, request_size, size_sent);
+	}
+	else
+	{
+		/* If eot detected, do nothing but return success. */
+		size_sent = request_size;
+	}
+
+	return size_sent;
+}
+
+
 static int data_out_fcn(char * buf, const int request_size, const int last_sent_size, void * const chan_state)
 {
 	TX_PARAMS * const tx_parms = (TX_PARAMS * const) chan_state;
-	int size_left;
+	int size_left ;
 	int actual_size_sent;
-
 
 	tx_parms->source_pos += last_sent_size;
 
