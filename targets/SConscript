@@ -9,7 +9,10 @@ if env['TARGET_OS'] == 'win32':
     env = env.Clone(tools = ['mingw'], \
         CCFLAGS='-ansi -Wall -Wextra -pedantic-errors')
     if env['BUILD_TYPE'] == 'Release':
-    	    env.Append(CCFLAGS=' -Os')
+        env.Append(CCFLAGS=' -Os')
+    else:
+        env.Append(CCFLAGS=' -g')
+        env.Append(LINKFLAGS=' -g')
     env['CC'] ='i686-w64-mingw32-gcc' # Override gcc for path conflict reasons.
 
 elif env['TARGET_OS'] == 'hdmi2usb-lm32':

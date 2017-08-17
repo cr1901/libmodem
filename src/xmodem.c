@@ -344,7 +344,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			 * checksum error." */
 			else if((flags == XMODEM) && \
 				generate_chksum(&rx_buffer[DATA], data_size) \
-				!= rx_buffer[DATA])
+				!= rx_buffer[CHKSUM_CRC])
 			{
 				modem_status = BAD_CRC_CHKSUM;
 			}

@@ -280,11 +280,11 @@ MU_TEST(test_xmodem_packet)
 
 	fill_buf(tx_opts.data_source, tx_opts.source_size = 255);
 	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
-	xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM);
+	mu_check(xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM) == MODEM_NO_ERRORS);
 
-	printf("%s", rx_opts.data_sink);
+	//printf("%s", rx_opts.data_sink);
 
-	//mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 255) == 1);
+	mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 255) == 1);
 	//mu_assert_int_eq(rx_opts.data_sink[255], CPMEOF);
 }
 
@@ -355,7 +355,8 @@ static int data_in_fcn(char * buf, const int request_size, const int eot, void *
 	{
 		space_left = rx_params->sink_size - rx_params->sink_pos;
 		size_sent = (request_size < space_left) ? request_size : space_left;
-		buf_cpy(rx_params->data_sink + rx_params->sink_pos, request_size, size_sent);
+		buf_cpy(rx_params->data_sink + rx_params->sink_pos, buf, size_sent);
+		rx_params->sink_pos += size_sent;
 	}
 	else
 	{
@@ -401,6 +402,7 @@ static int buf_cmp(char * buf1, char * buf2, int len)
 
 	for(cur = 0; (tx_okay && cur < len); cur++)
 	{
+		//printf("buf2 : %0X, %0X, %0X\n", ((unsigned char *) buf2)[cur], ((unsigned char *) buf2)[cur + 1], ((unsigned char *) buf2)[cur + 2]);
 		tx_okay = (((unsigned char *) buf1)[cur] == ((unsigned char *) buf2)[cur]);
 	}
 
