@@ -76,7 +76,6 @@ int write_data(serial_handle_t port, char * data, unsigned int num_bytes)
 	{
 		unsigned int count;
 		unsigned int curr_offset = VOID_TO_PORT(port, buf_pos_tx);
-		/* printf("buf_pos_write: %d\n", VOID_TO_PORT(port, buf_pos_tx)); */
 		for(count = 0; count < num_bytes; count++)
 		{
 			((PORT_DESC *) port)->tx_line[curr_offset + count] = data[count];
@@ -107,7 +106,6 @@ int read_data(serial_handle_t port, char * data, unsigned int num_bytes, int tim
 	{
 		unsigned int count;
 		unsigned int curr_offset = VOID_TO_PORT(port, buf_pos_rx);
-		//printf("buf_pos_rx_read: %p, %d, %d\n", port, VOID_TO_PORT(port, buf_pos_rx), num_bytes);
 		for(count = 0; count < num_bytes; count++)
 		{
 			 data[count] = ((PORT_DESC *) port)->rx_line[curr_offset + count];

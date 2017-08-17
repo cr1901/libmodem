@@ -25,18 +25,7 @@ typedef struct port_desc
 	unsigned int buf_pos_rx;
 }PORT_DESC;
 
-
-/* Simulate channel at some point? */
-/* typedef struct chan_desc
-{
-	
-
-} */
 #define VOID_TO_PORT(x, y) ((PORT_DESC *) x)->y
 extern PORT_DESC port_model[3];
 
-
-
-
 #endif        /*  #ifndef SHARED_H  */
-

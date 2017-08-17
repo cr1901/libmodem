@@ -103,10 +103,10 @@ MODEM_ERRORS xmodem_tx(O_channel data_out_fcn, unsigned char * tx_buffer, void *
 			SERIAL_NO_ERRORS)
 		{
 			return serial_to_modem_error(ser_status);
-                }
+		}
 
-                /* Interpret the response. */
-                if(rx_code == ACK)
+		/* Interpret the response. */
+		if(rx_code == ACK)
 		{
 			/* Increment the block number and negate the
 			complement block number in one line. */
@@ -189,7 +189,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 	unsigned char expected_start_char_1 = 0, expected_start_char_2 = 0, \
 			expected_block_no = 0, expected_comp_block_no = 0;
 	/* Logic variables. */
-	int eot_detected = MODEM_FALSE, using_128_blocks_in_1k = MODEM_FALSE;
+	int eot_detected = 0, using_128_blocks_in_1k = 0;
 	size_t bytes_written;
 	MODEM_ERRORS modem_status;
 	SERIAL_STATUS ser_status;
@@ -240,9 +240,8 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 		rx_buffer[0] = NUL;
 		/* Wait for first character. */
 
-		while(MODEM_TRUE)
+		while(1)
 		{
-		/*do{ */
 			error_count++;
 			if(error_count > 11)
 			{
@@ -253,7 +252,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			}
 
 			/* Fallback to XMODEM from XMODEM_CRC if conditions
-			 * are met. */
+			are met. */
 			if(flags == XMODEM_CRC && error_count > 2)
 			{
 				flags = XMODEM;
@@ -270,14 +269,12 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			}
 			else if(rx_buffer[0] == EOT)
 			{
-				eot_detected = MODEM_TRUE;
+				eot_detected = 1;
 				break;
 			}
 
 			if(ser_status == SERIAL_TIMEOUT)
 			{
-				/* debug-printf eventually?
-				printf("Timeout occurred.\n"); */
 				serial_snd(&tx_code, 1, serial_device);
 			}
 		}
@@ -292,14 +289,14 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 					/* set_packet_offsets(offsets, rx_buffer, XMODEM_CRC); */
 					chksum_offset = CHKSUM_CRC;
 					packet_end = CRC_END;
-					using_128_blocks_in_1k = MODEM_TRUE;
+					using_128_blocks_in_1k = 1;
 				}
 				else if((rx_buffer[0] == STX) && using_128_blocks_in_1k)
 				{
 					/* set_packet_offsets(offsets, rx_buffer, XMODEM_1K); */
 					chksum_offset = X1K_CRC;
 					packet_end = X1K_END;
-					using_128_blocks_in_1k = MODEM_FALSE;
+					using_128_blocks_in_1k = 0;
 				}
 			}
 
@@ -308,23 +305,19 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 			data_size = chksum_offset - DATA;
 			data_plus_crc_size = packet_end - DATA;
 
-			/* count = 1; */ /* First character must be preserved because all
-				* offsets have been set. If not preserved,
-				* all data is shifted to by one element downward. */
 			ser_status = serial_rcv((char *) (rx_buffer + 1), \
 				expected_size, 1, NULL, serial_device);
 			modem_status = serial_to_modem_error(ser_status);
-
 
 			/* Check for common errors. */
 			if(ser_status != SERIAL_NO_ERRORS) /* For now, only TIMEOUT is expected here. */
 			{
 				/* If error occurs cause RX timeout before sending status code,
-				 * since transmitter flushes UART buffer after sending packet. */
+				since transmitter flushes UART buffer after sending packet. */
 				purge(serial_device);
 			}
-				/* If expected block numbers weren't received (either current or
-				 * previous packet number) synchronicity was lost- unrecoverable. */
+			/* If expected block numbers weren't received (either current or
+			previous packet number) synchronicity was lost- unrecoverable. */
 			else if(((rx_buffer[COMP_BLOCK_NO] != expected_comp_block_no) && \
 				(rx_buffer[BLOCK_NO] != expected_block_no))) /* || \
 				((*offsets[COMP_BLOCK_NO] != expected_comp_block_no + 1) && \
@@ -334,14 +327,13 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				/* Look up YMODEM.txt to determine how the receiver
 				handles receiving the previous packet again. */
 
-				/* printf("Packet Mismatch\n", chksum); */
 				serial_snd(&tx_code, 1, serial_device);
 				return PACKET_MISMATCH;
 			}
 
 			/* This ridiculous else if statement can be read as:
-			 * "If using XMODEM and the checksum is bad, set bad
-			 * checksum error." */
+			"If using XMODEM and the checksum is bad, set bad
+			checksum error." */
 			else if((flags == XMODEM) && \
 				generate_chksum(&rx_buffer[DATA], data_size) \
 				!= rx_buffer[CHKSUM_CRC])
@@ -356,18 +348,15 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 				modem_status = BAD_CRC_CHKSUM;
 			}
 
-			/* printf("Current Status Code: %X\n", status); */
 			switch(modem_status)
 			{
 				case BAD_CRC_CHKSUM:
 				case MODEM_TIMEOUT:
-					/* modem_fseek(f_ptr, current_offset); */
 					tx_code = NAK;
 					serial_snd(&tx_code, 1, serial_device);
 					break;
 				case MODEM_NO_ERRORS:
 					expected_comp_block_no = ~(++expected_block_no);
-					/* bytes_written = modem_fwrite(offsets[DATA], (size_t) (offsets[CHKSUM_CRC] - offsets[DATA]), f_ptr); */
 					bytes_written = data_in_fcn((char *) &rx_buffer[DATA], data_size, eot_detected, chan_state);
 					if(bytes_written < data_size)
 					{
@@ -377,10 +366,9 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 					}
 					else
 					{
-						/* current_offset += (offsets[CHKSUM_CRC] - offsets[DATA]); */
 						error_count = -1;
 						/* Reset error count if entire packet successfully
-						 * sent (all errors retried 10 times). */
+						sent (all errors retried 10 times). */
 						tx_code = ACK;
 						serial_snd(&tx_code, 1, serial_device);
 					}
@@ -391,7 +379,7 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 					return UNDEFINED_ERROR;
 			}
 			tx_code = NAK; /* Make sure the receiver is ready to send
-							* NAK in case of timeout after looping. */
+						   NAK in case of timeout after looping. */
 		} /* End if(!eot_detected) */
 	}while(!eot_detected);
 
@@ -401,16 +389,6 @@ MODEM_ERRORS xmodem_rx(I_channel data_in_fcn, unsigned char * rx_buffer, void * 
 
 	return MODEM_NO_ERRORS;
 }
-
-
-/* void assemble_xmodem_packet(unsigned char * data, unsigned char block_no, size_t size, \
-	unsigned short flags)
-{
-
-
-
-} */
-
 
 unsigned char generate_chksum(unsigned char * data, size_t size)
 {
@@ -424,14 +402,14 @@ unsigned char generate_chksum(unsigned char * data, size_t size)
 }
 
 /* Use CRC-16-CCITT. XMODEM sends MSB first, so initial
- * CRC value should be 0. */
+CRC value should be 0. */
 unsigned short generate_crc(unsigned char * data, size_t size)
 {
 	const unsigned int crc_poly = 0x1021;
 	unsigned int crc = 0x0000;
 
-	register unsigned int octet_count;
-	register unsigned char bit_count;
+	unsigned int octet_count;
+	unsigned char bit_count;
 	for(octet_count = 0; octet_count < size; octet_count++)
 	{
 		crc = (crc ^ (unsigned int) (data[octet_count] & (0xFF)) << 8);
@@ -453,8 +431,8 @@ unsigned short generate_crc(unsigned char * data, size_t size)
 }
 
 
-/** Static functions. **/
-/* Yes, memset would work, but do not depend on existence of string.h */
+/* Private functions begin here. */
+/* Do not depend on existence of string.h */
 static void pad_buffer(unsigned char * buf, size_t bufsiz, unsigned char val)
 {
 	size_t count;
@@ -477,7 +455,7 @@ static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned sh
 {
 	unsigned int elapsed_time;
 	SERIAL_STATUS ser_status = SERIAL_NO_ERRORS;
-	int expected_rx_detected = MODEM_FALSE;
+	int expected_rx_detected = 0;
 	char rx_code = NUL;
 
 	/* Wait for NAK or 'C', timeout after 1 minute. */
@@ -496,13 +474,12 @@ static MODEM_ERRORS wait_for_rx_ready(serial_handle_t serial_device, unsigned sh
 		/* ASCII_C is only correct for XMODEM_1K and XMODEM_CRC. */
 		else if((flags == XMODEM_1K || flags == XMODEM_CRC) && rx_code == ASCII_C)
 		{
-			expected_rx_detected = MODEM_TRUE;
+			expected_rx_detected = 1;
 		}
 		/* Else, wait for NAK. */
 		else if((flags == XMODEM) && rx_code == NAK)
 		{
-			/* printf("We found NAK!\n"); */
-			expected_rx_detected = MODEM_TRUE;
+			expected_rx_detected = 1;
 		}
 	}
 

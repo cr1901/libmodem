@@ -6,9 +6,6 @@
 
 /* Useful macros. */
 #define BIT(_x) 1 << _x
-#define MODEM_FALSE 0
-#define MODEM_TRUE 1
-
 
 /* ASCII defines. */
 #define NUL 0x00
@@ -50,15 +47,12 @@ typedef enum offset_names
 typedef enum modem_errors{
 	MODEM_NO_ERRORS = 0,
 	BAD_CRC_CHKSUM,
-	SENT_NAK,
 	SENT_CAN,
 	PACKET_MISMATCH, /* Packet equals number different from expected. */
-	ASYNC_XFER_INCOMPLETE, /* May not be useful. */
 	CHANNEL_ERROR,
 	UNDEFINED_ERROR, /* Placeholder error. */
 	MODEM_HW_ERROR, /* Error reading, writing, or accessing serial device. */
 	MODEM_TIMEOUT,	/* No data was read in expected time frame. */
-	INVALID_MODE, /* Invalid xfer mode for function (i.e. using YMODEM_G in XMODEM). */
 	NOT_IMPLEMENTED
 }MODEM_ERRORS;
 
@@ -75,12 +69,6 @@ typedef enum xfer_modes
 	ZMODEM,
 	KERMIT
 }XFER_MODES;
-
-typedef struct modem_status{
-	unsigned long bytes_transferred;
-	unsigned short time_elapsed;
-	char * filename;
-}MODEM_STATUS;
 
 typedef int (* O_channel)(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
 typedef int (* I_channel)(const char * buf, const int buf_size, const int eof, void * const chan_state);
