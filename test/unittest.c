@@ -47,7 +47,7 @@ static void * buf_cpy(char * dest, char * src, size_t len);
 static void buf_clr(char * buf, unsigned int num_chars);
 
 static void verify_packet(char * packet, unsigned char packet_no, char * payload, \
-	unsigned int payload_len, int using_1k);
+	unsigned int payload_len, int using_chksum, int using_1k);
 
 /* Setup/teardown functions for each test. */
 /* Test setup clears all buffers and assumes a working serial port. */
@@ -216,7 +216,7 @@ MU_TEST(test_xmodem_packet)
 	rx_opts.data_source[0] = NAK;
 	rx_opts.data_source[1] = ACK;
 	rx_opts.data_source[2] = ACK;
-	rx_opts.data_source[3] = ACK; /* Fourth ACK is for 128 boundary test. */
+	rx_opts.data_source[3] = ACK; /* Fourth ACK is for boundary test. */
 
 	VOID_TO_PORT(local_port, bad_flush) = 1; /* The transmit routine
 	will flush its rx buffer occassionally. In the context of a simulation,
@@ -235,7 +235,7 @@ MU_TEST(test_xmodem_packet)
 
 	/* Intercept the packet directly and test the transmit routine! */
 	serial_rcv(rx_opts.data_sink, CHKSUM_END, 1, NULL, remote_port);
-	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 127, 0);
+	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 127, 1, 0);
 
 	/* Reset the port state. */
 	VOID_TO_PORT(local_port, bad_flush) = 0;
@@ -246,7 +246,7 @@ MU_TEST(test_xmodem_packet)
 	VOID_TO_PORT(local_port, buf_pos_tx) = 0;
 	VOID_TO_PORT(remote_port, buf_pos_tx) = 0;
 
-	/* Now do a bounary test- 128 byte file. Should result in 128 bytes
+	/* Now do a bounary test- 128/1024 byte file. Should result in 128/1024 bytes
 	extra data of CPMEOF appended. */
 	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
 	mu_assert_int_eq(NAK, VOID_TO_PORT(local_port, rx_line)[0]);
@@ -254,15 +254,17 @@ MU_TEST(test_xmodem_packet)
 	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
 
 	serial_rcv(rx_opts.data_sink, 2*CHKSUM_END, 1, NULL, remote_port);
-	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 128, 0);
-	verify_packet(&rx_opts.data_sink[CHKSUM_END], 2, NULL, 0, 0);
+	verify_packet(&rx_opts.data_sink[0], 1, tx_opts.data_source, 128, 1, 0);
+	verify_packet(&rx_opts.data_sink[CHKSUM_END], 2, NULL, 0, 1, 0);
 }
 
 static void verify_packet(char * packet, unsigned char packet_no, char * payload,
-	unsigned int payload_len, int using_1k)
+	unsigned int payload_len, int using_chksum, int using_1k)
 {
 	unsigned int max_payload_len = using_1k ? 1024 : 128;
-	mu_assert_int_eq(SOH, packet[0]);
+	char start_char = using_chksum ? SOH : STX;
+
+	mu_assert_int_eq(start_char, packet[0]);
 	mu_assert_int_eq(packet_no, packet[1]);
 	mu_assert_int_eq((unsigned char) ~packet_no, (unsigned char) packet[2]);
 	if(payload != NULL)
