@@ -37,11 +37,11 @@ unsigned char temp_buf[X1K_END + 1]; /* A dummy buffer to make the xmodem routin
 
 serial_handle_t local_port, remote_port;
 TX_PARAMS tx_opts = {local_source, local_sink, 0, 0, 0};
-RX_PARAMS rx_opts = {remote_source, remote_sink, 0};
+RX_PARAMS rx_opts = {remote_source, remote_sink, 0, 0};
 
 /* Data xfer fcns used as XMODEM callbacks. */
 static int data_out_fcn(char * buf, const int request_size, const int last_sent_size, void * const chan_state);
-static int data_in_fcn(char * buf, const int request_size, const int eot, void * const chan_state);
+static int data_in_fcn(const char * buf, const int request_size, const int eot, void * const chan_state);
 /* Helper functions. */
 static void fill_buf(char * buf, unsigned int num_chars);
 static int buf_cmp(char * buf1, char * buf2, int len);
@@ -282,12 +282,55 @@ MU_TEST(test_xmodem_xfer_chksum)
 	mu_assert_int_eq(NAK, VOID_TO_PORT(local_port, rx_line)[0]);
 
 	fill_buf(tx_opts.data_source, tx_opts.source_size = 255);
-	xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM);
+	mu_check(xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM) == MODEM_NO_ERRORS);
 	mu_check(xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM) == MODEM_NO_ERRORS);
 
 	mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 255) == 1);
 	mu_assert_int_eq(rx_opts.data_sink[255], CPMEOF);
 }
+
+
+MU_TEST(test_xmodem_xfer_crc)
+{
+	/* rx_opts.data_source[0] = NAK; */ /* Crashes test suite...
+	test suite wait_for_rx_ready() has no concept of interrupts and happily
+	reads past end of local port's virtual receive buffer waiting for
+	CRC start char. */
+	rx_opts.data_source[0] = ASCII_C;
+	rx_opts.data_source[1] = ACK;
+	rx_opts.data_source[2] = ACK;
+	rx_opts.data_source[3] = ACK;
+
+	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
+	mu_assert_int_eq(ASCII_C, VOID_TO_PORT(local_port, rx_line)[0]);
+
+	fill_buf(tx_opts.data_source, tx_opts.source_size = 255);
+	mu_check(xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM_CRC) == MODEM_NO_ERRORS);
+	mu_check(xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM_CRC) == MODEM_NO_ERRORS);
+
+	mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 255) == 1);
+	mu_assert_int_eq(rx_opts.data_sink[255], CPMEOF);
+}
+
+
+MU_TEST(test_xmodem_xfer_1k)
+{
+	rx_opts.data_source[0] = ASCII_C;
+	rx_opts.data_source[1] = ACK;
+	rx_opts.data_source[2] = ACK;
+	rx_opts.data_source[3] = ACK;
+
+	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
+	mu_assert_int_eq(ASCII_C, VOID_TO_PORT(local_port, rx_line)[0]);
+
+	fill_buf(tx_opts.data_source, tx_opts.source_size = 2048 - 128);
+	mu_check(xmodem_tx(data_out_fcn, temp_buf, &tx_opts, local_port, XMODEM_1K) == MODEM_NO_ERRORS);
+	mu_check(xmodem_rx(data_in_fcn, temp_buf, &rx_opts, remote_port, XMODEM_1K) == MODEM_NO_ERRORS);
+
+	mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 2048 - 128) == 1);
+	mu_assert_int_eq(rx_opts.data_sink[2047], CPMEOF); /* Ensure last 128 is EOF */
+}
+
 
 
 static void verify_packet(char * packet, unsigned char packet_no, char * payload,
@@ -335,6 +378,8 @@ MU_TEST_SUITE(ser_test_suite)
 	MU_RUN_TEST(test_xmodem_packet);
 	MU_RUN_TEST(test_xmodem_packet_boundary);
 	MU_RUN_TEST(test_xmodem_xfer_chksum);
+	MU_RUN_TEST(test_xmodem_xfer_crc);
+	MU_RUN_TEST(test_xmodem_xfer_1k);
 }
 
 
@@ -349,7 +394,7 @@ int main(int argc, char *argv[])
 }
 
 
-static int data_in_fcn(char * buf, const int request_size, const int eot, void * const chan_state)
+static int data_in_fcn(const char * buf, const int request_size, const int eot, void * const chan_state)
 {
 	RX_PARAMS * const rx_params = (RX_PARAMS * const) chan_state;
 	int space_left;
