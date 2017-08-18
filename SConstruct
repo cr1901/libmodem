@@ -8,12 +8,12 @@ vars = Variables(['variables.cache', 'settings.py'])
 vars.Add(BoolVariable('DEBUG_MESSAGES', 'Set for debugging messages in SConscripts.', 0))
 vars.Add(EnumVariable('BUILD_TYPE', 'Set the build type for the current target', \
     'Debug', allowed_values=('Debug', 'Release')))
-vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables.', '#/bin'))
+vars.Add(PathVariable('HOST_INSTALL_DIR', 'Install directory of host executables.', 'bin'))
 vars.Add(EnumVariable('TARGET_OS', 'Set the current target OS', \
-    'win32', allowed_values=('win32', 'dos', 'hdmi2usb-lm32')))
-vars.Add(PathVariable('EXTRA_PATH', 'Path to compilers if autodetection fails.', '#/bin'))
-vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', '#/bin'))
-vars.Add(PathVariable('PICTOR', 'Path to SoftCircuits PICTOR library', '#/../PICTOR'))
+    'win32', allowed_values=('win32', 'dos', 'posix', 'hdmi2usb-lm32')))
+vars.Add(PathVariable('EXTRA_PATH', 'Path to compilers if autodetection fails.', 'bin'))
+vars.Add(PathVariable('XFER_PATH', 'Path to the serial transfer application.', 'bin'))
+vars.Add(PathVariable('PICTOR', 'Path to SoftCircuits PICTOR library', None))
 vars.Add(PathVariable('HDMI2USB_BUILD', 'Path to HDMI2USB build root (should have "software" as subdirectory)', None))
 
 """Use Update(env) to add variables to existing environment:

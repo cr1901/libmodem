@@ -32,7 +32,9 @@ def check_char_bit(context):
 
 platform_signatures = {'dos': ['__DOS__'],
     'win32': ['__WINDOWS__', '_WIN32'],
-    'hdmi2usb-lm32': ['__lm32__']}
+    'hdmi2usb-lm32': ['__lm32__'],
+    'posix' : ['__unix__']
+}
 
 def platform_sanity_checks(env):
     if not env.GetOption('clean') and not env.GetOption('help'):

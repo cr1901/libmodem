@@ -34,6 +34,10 @@ elif env['TARGET_OS'] == 'dos':
     env.Append(CCFLAGS='-bt=dos -za -wx')
     env['MEMMODEL16'] = 's'
 
+elif env['TARGET_OS'] == 'posix':
+    pass 
+
+
 #If host same as target
 if env['PLATFORM'].lower() == env['TARGET_OS'].lower():
     env.Alias('install', env['HOST_INSTALL_DIR'])

@@ -3,10 +3,10 @@ Import('env', 'build_dir', 'pi_objs')
 
 # Build one or more test runners. Relax ANSI requirement here.
 if 'test' in COMMAND_LINE_TARGETS:
-    if env['TARGET_OS'] in ['win32']:
+    if env['TARGET_OS'] in ['win32', 'posix']:
         # Minunit is c99
         ansi_cflags = env['CCFLAGS']
-        relaxed_cflags = ansi_cflags.replace('pedantic-errors', 'pedantic')
+        relaxed_cflags = str(ansi_cflags).replace('pedantic-errors', 'pedantic')
         relaxed_cflags += ' -std=c99'
 
         unittest_obj = env.Object(Split('unittest.c serprim.c'), CPPPATH=Dir('#/src'), CCFLAGS=relaxed_cflags)
