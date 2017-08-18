@@ -300,6 +300,7 @@ MU_TEST(test_xmodem_xfer_crc)
 	rx_opts.data_source[1] = ACK;
 	rx_opts.data_source[2] = ACK;
 	rx_opts.data_source[3] = ACK;
+	rx_opts.data_source[3] = ACK;
 
 	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
 	mu_assert_int_eq(ASCII_C, VOID_TO_PORT(local_port, rx_line)[0]);
@@ -316,11 +317,18 @@ MU_TEST(test_xmodem_xfer_crc)
 MU_TEST(test_xmodem_xfer_1k)
 {
 	rx_opts.data_source[0] = ASCII_C;
-	rx_opts.data_source[1] = ACK;
-	rx_opts.data_source[2] = ACK;
-	rx_opts.data_source[3] = ACK;
+	rx_opts.data_source[1] = ACK; /* 1024 */
+	rx_opts.data_source[2] = ACK; /* 128 */
+	rx_opts.data_source[3] = ACK; /* 128 */
+	rx_opts.data_source[4] = ACK; /* 128 */
+	rx_opts.data_source[5] = ACK; /* 128 */
+	rx_opts.data_source[6] = ACK; /* 128 */
+	rx_opts.data_source[7] = ACK; /* 128 */
+	rx_opts.data_source[8] = ACK; /* 128 */
+	rx_opts.data_source[9] = ACK; /* CPMEOF block */
+	rx_opts.data_source[10] = ACK;
 
-	mu_check(serial_snd(rx_opts.data_source, 4, remote_port) == SERIAL_NO_ERRORS);
+	mu_check(serial_snd(rx_opts.data_source, 11, remote_port) == SERIAL_NO_ERRORS);
 	mu_assert_int_eq(ASCII_C, VOID_TO_PORT(local_port, rx_line)[0]);
 
 	fill_buf(tx_opts.data_source, tx_opts.source_size = 2048 - 128);
@@ -330,7 +338,6 @@ MU_TEST(test_xmodem_xfer_1k)
 	mu_check(buf_cmp(tx_opts.data_source, rx_opts.data_sink, 2048 - 128) == 1);
 	mu_assert_int_eq(rx_opts.data_sink[2047], CPMEOF); /* Ensure last 128 is EOF */
 }
-
 
 
 static void verify_packet(char * packet, unsigned char packet_no, char * payload,
@@ -428,7 +435,7 @@ static int data_out_fcn(char * buf, const int request_size, const int last_sent_
 	size_left = tx_parms->source_size - tx_parms->source_pos;
 	actual_size_sent = (request_size < size_left) ? request_size : size_left;
 
-	buf_cpy(buf, tx_parms->data_source + tx_parms->source_pos, request_size);
+	buf_cpy(buf, tx_parms->data_source + tx_parms->source_pos, actual_size_sent);
 
 	return actual_size_sent;
 }
