@@ -39,6 +39,8 @@ print 'Target platform is: ' + env['TARGET_OS']
 print 'Build dir will be: ' + str(build_dir) + '\n'
 if env['DEBUG_MESSAGES']:
     print 'Dumping Environment: ' + env.Dump()
+    import os
+    print os.environ['PATH']
 
 env = SConscript(['targets/SConscript'], exports = ['env'])
 pi_objs = SConscript(['src/SConscript'], exports = ['env'], variant_dir = build_dir, duplicate=0)
