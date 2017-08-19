@@ -15,14 +15,23 @@ serial_handle_t open_handle(unsigned short port_no)
 
 int handle_valid(serial_handle_t port)
 {
-    return (MMPTR(CSR_UART_BASE) == MMPTR(port));
+    return ((serial_handle_t) CSR_UART_BASE == port);
 }
 
 int init_port(serial_handle_t port, unsigned long baud_rate)
 {
-    /* BIOS will initialize uart and timer. */
+    /* BIOS will initialize uart and timer, but we need to measure
+    intervals greater than 2 seconds (up to 10). */
+    int t;
     (void) port;
     (void) baud_rate;
+
+    timer0_en_write(0);
+    t = 11*SYSTEM_CLOCK_FREQUENCY;
+    timer0_reload_write(t);
+    timer0_load_write(t);
+    timer0_en_write(1);
+
     return 0;
 }
 
@@ -33,15 +42,7 @@ int write_data(serial_handle_t port, char * data, unsigned int num_bytes)
 
     for(count = 0; count < num_bytes; count++)
     {
-        if(!uart_txfull_read())
-        {
-            uart_write(data[count]);
-        }
-        else
-        {
-            /* Assume unrecoverable if we fill tx buffer. */
-            return -2;
-        }
+        uart_write(data[count]);
     }
 
     return 0;
@@ -92,6 +93,7 @@ int read_data_get_elapsed_time(serial_handle_t port, char * data, unsigned int n
 int close_handle(serial_handle_t port)
 {
     (void) port;
+    time_init(); /* Restore BIOS defaults. */
     return 0;
 }
 
