@@ -2,6 +2,7 @@
 .sconf_temp/
 .sconsign.dblite
 *.err
+*.pyc
 variables.cache
 INSTRUCTIONS.txt
 MODEM.zip
