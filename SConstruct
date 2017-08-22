@@ -19,7 +19,7 @@ vars.Add(PathVariable('HDMI2USB_BUILD', 'Path to HDMI2USB build root (should hav
 """Use Update(env) to add variables to existing environment:
 http://stackoverflow.com/questions/9744867/scons-how-to-add-a-new-command-line-variable-to-an-existing-construction-enviro"""
 
-env = Environment(variables = vars)
+env = Environment(variables = vars, tools = ["doxygen"])
 vars.Save('variables.cache', env)
 Help(vars.GenerateHelpText(env))
 
@@ -49,5 +49,11 @@ SConscript(['test/SConscript'], exports = ['env', 'build_dir', 'pi_objs'], varia
 #http://www.knowthytools.com/2009/05/scons-cleaning-variantdir.html
 Clean('.', 'bin/' + env['TARGET_OS'])
 #SConscript(['SRC/GUI/SConscript'])
+
+if 'docs' in COMMAND_LINE_TARGETS:
+    api_docs = env.Doxygen('Doxyfile')
+    doc_alias = env.Alias('docs', [api_docs])
+    env.Clean(doc_alias, api_docs)
+
 
 #Additional help goes here...
