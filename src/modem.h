@@ -271,6 +271,26 @@ response within 3 attempts.
 */
 modem_errors_t xmodem_rx(input_channel_t data_in, unsigned char * buf, void * chan_state, serial_handle_t device, const xmodem_xfer_mode_t flags);
 
+/** \brief SFL receiver implementation.
+
+sfl_rx() will initiate a data receive session over the opened serial device
+\p device. The function will call callback \p data_in as a data sink for
+received packets. sfl_rx() will pass a pointer within \p buf, along with a
+valid buffer size for \p data_in to send to a destination. Data transfer has
+ended when \p eof indicates an end-of-data condition (`1`).
+
+\param[in,out] data_in Callback that sfl_rx() uses to send data.
+\param[in] buf Intermediate buffer, used to hold a full SFL packet. A
+pointer offset into the buffer where the data payload starts is passed into
+\p data_in's \p buf parameter. It is up to the caller to ensure the buffer
+at least 256 bytes.
+\param[in,out] chan_state State for callback \p data_in, passed into the \p
+chan_state parameter of \p data_in. sfl_rx() itself does not modify
+\p chan_state.
+\param[in] device Handle to a serial port.
+*/
+modem_errors_t sfl_rx(input_channel_t data_in, unsigned char * buf, void * chan_state, serial_handle_t device);
+
 /* Change data sizes all to uint32_t? */
 /** \brief Generate 8-bit checksum.
 

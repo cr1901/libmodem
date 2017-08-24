@@ -7,7 +7,7 @@ check_platform_specific_libs(env)
 
 #PI- Platform Independent, PD- Platform Dependent
 xfer_exe_src = Split('trxcom.c')
-pi_src = [Dir('.').File(src) for src in Split('serial.c xmodem.c')]
+pi_src = [Dir('.').File(src) for src in Split('serial.c xmodem.c sfl.c')]
 pd_src = [Dir(env['TARGET_OS']).File(src) for src in Split('serprim.c')]
 env.AppendUnique(CPPPATH = '.') #We are using a variant directory.
 #This ensures both variant and orig directory are included.
