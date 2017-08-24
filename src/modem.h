@@ -245,7 +245,7 @@ modem_errors_t xmodem_tx(output_channel_t data_out, unsigned char * buf, void * 
 
 xmodem_rx() will initiate a data receive session over the opened serial device
 \p device. The function will call callback \p data_in as a data sink for
-received packets. xmodem_tx() will pass a pointer within \p buf, along with a
+received packets. xmodem_rx() will pass a pointer within \p buf, along with a
 valid buffer size for \p data_in to send to a destination. Data transfer has
 ended when \p eof indicates an end-of-data condition (`1`).
 

@@ -19,7 +19,7 @@ vars.Add(PathVariable('HDMI2USB_BUILD', 'Path to HDMI2USB build root (should hav
 """Use Update(env) to add variables to existing environment:
 http://stackoverflow.com/questions/9744867/scons-how-to-add-a-new-command-line-variable-to-an-existing-construction-enviro"""
 
-env = Environment(variables = vars, tools = ["doxygen"])
+env = Environment(variables = vars, tools = ["default", "doxygen"])
 vars.Save('variables.cache', env)
 Help(vars.GenerateHelpText(env))
 
