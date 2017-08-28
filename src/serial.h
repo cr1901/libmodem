@@ -8,6 +8,11 @@ serial.h consists of user-facing functions to access an underlying UART.
 The functions themselves eventually call into serprim.h, and exist to wrap
 potential error conditions in a platform-independent manner using return values
 from the primitives.
+
+\todo Add `from_native`/`to_native` for hosted implementations. This allows
+opting out of the other API functions while still using modem.h functions. It
+should typecast the _address_ of the passed-in variable to/from
+serial_device_t.
 */
 
 /** \brief Opaque handle to serial port state.

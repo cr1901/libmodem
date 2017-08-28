@@ -8,6 +8,10 @@ modem.h consists of user-facing functions to transfer and receive data. Each
 function expects at least a valid handle opened by open_handle(), and a
 function pointer that indicates how to transfer the data before/after serial
 transmit/receive.
+
+\todo Add `sfl_boot_cmd_t` callback function type for SFL boot.
+\todo Add \p size_hint parameter to all functions to handle use-cases where
+entire packet cannot be stored at once.
 */
 
 #include "serial.h"
@@ -205,6 +209,9 @@ int write_to_buf(const char * buf, const int buf_size, const int eof, void * con
 	return size_sent;
 }
 \endcode
+
+\todo Add \p address input argument to handle protocols such as SFL where
+this information is provided.
 */
 typedef int (* input_channel_t)(const char * buf, const int buf_size, const int eof, void * const chan_state);
 
