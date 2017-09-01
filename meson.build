@@ -32,12 +32,12 @@ test('unittest', unit_tests)
 # Doc
 doxygen = find_program('doxygen', required : false)
 if doxygen.found()
-    # Strip absolute path of drive letter- confuses Doxygen
+    # Strip absolute path on Windows- confuses Doxygen
     if build_machine.system() == 'windows'
-        res = run_command(join_paths(meson.source_root(), 'scripts', 'get_relpath.py'),
+        res = run_command(join_paths(meson.source_root(), 'scripts', 'get-relpath.py'),
                           meson.source_root(),
                           meson.build_root())
-        root = res.stdout()
+        root = res.stdout().strip()
     else
         root = meson.source_root()
     endif
