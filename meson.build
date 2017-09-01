@@ -1,4 +1,5 @@
 project('libmodem', 'c')
+cdata = configuration_data()
 
 # Platform-specific Build Helpers
 
@@ -26,3 +27,28 @@ test_src = ['test/serprim.c', 'test/unittest.c'] + pi_src
 test_inc = include_directories('test')
 unit_tests = executable('unittest', test_src, include_directories : [incdir, test_inc])
 test('unittest', unit_tests)
+
+
+# Doc
+doxygen = find_program('doxygen', required : false)
+if doxygen.found()
+    # Strip absolute path of drive letter- confuses Doxygen
+    if build_machine.system() == 'windows'
+        res = run_command(join_paths(meson.source_root(), 'scripts', 'get_relpath.py'),
+                          meson.source_root(),
+                          meson.build_root())
+        root = res.stdout()
+    else
+        root = meson.source_root()
+    endif
+
+    cdata.set('TOP_SRCDIR', root)
+    doxyfile = configure_file(input: 'Doxyfile.in',
+                        output: 'Doxyfile',
+                        configuration: cdata,
+                        install: false)
+    html = custom_target('doc',
+                          input: doxyfile,
+                          output: 'html',
+                          command: [doxygen, doxyfile])
+endif
