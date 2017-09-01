@@ -2,6 +2,18 @@ project('libmodem', 'c')
 cdata = configuration_data()
 
 # Platform-specific Build Helpers
+if host_machine.system() == 'hdmi2usb'
+    c_flags = run_command(join_paths(meson.source_root(), 'scripts', 'misoc-config.py'),
+                          meson.get_cross_property('hdmi2usb_dir'), '--cflags')
+    if c_flags.returncode() == 0
+        add_project_arguments(c_flags.stdout().strip().split(), language : 'c')
+    else
+        error('misoc-config.py failed: ' + c_flags.stderr())
+    endif
+    tests_avail = false
+else
+    tests_avail = true
+endif
 
 
 
@@ -23,10 +35,13 @@ static_library('modem', lib_src, include_directories : incdir)
 
 
 # Test
-test_src = ['test/serprim.c', 'test/unittest.c'] + pi_src
-test_inc = include_directories('test')
-unit_tests = executable('unittest', test_src, include_directories : [incdir, test_inc])
-test('unittest', unit_tests)
+if tests_avail
+    test_src = ['test/serprim.c', 'test/unittest.c'] + pi_src
+    test_inc = include_directories('test')
+    unit_tests = executable('unittest', test_src,
+        include_directories : [incdir, test_inc])
+    test('unittest', unit_tests)
+endif
 
 
 # Doc
