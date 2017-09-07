@@ -10,4 +10,4 @@ cpu_family = 'lm32'
 endian = 'big'
 
 [properties]
-hdmi2usb_dir = 'C:\\msys64\\home\\William\\prj\\Consult\\timvideos\\HDMI2USB-litex-firmware\\build\\mimasv2_base_lm32'
+# hdmi2usb_dir = ''
