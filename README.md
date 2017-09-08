@@ -43,7 +43,7 @@ meson build_dir -dmy_var=value --cross-file=targets/{cross-file.txt}
 ```
 
 Cross-compiling may require some platform-specific variables to be set prior
-to running `meson`. See [Cross Files](#cf).
+to running `meson`. See [Build Options](#build-opts).
 
 # Code Structure
 `libmodem` is separated into platform-independent and platform-dependent
@@ -74,14 +74,14 @@ src, one directory per platform where `libmodem` runs. To facilitate
 code-sharing, `$PLATFORM` is deduced by the `meson.build`, using the following
 two variables:
 
-* `$SYSTEM`- Return value of `host_machine.system()` in `meson` for a given cross build.
-* `$CPU`- Return value of `host_machine.cpu()` in `meson` for a given cross build.
+* `$SYSTEM`- Return value of `host_machine.system()` in `meson` for a given build.
+* `$CPU`- Return value of `host_machine.cpu()` in `meson` for a given build.
 
 The build system searches for a directory name either `$SYSTEM`
 or `$SYSTEM-$CPU`, _typically the former_, under `src` for platform-specific
 source files. Because compilers and tools will certainly vary for the same
 platform on different CPUs, cross files are named `$SYSTEM-$CPU.txt` by convention.
-`meson` will not search for a `$SYSTEM-$CPU` directory unless [`cpu_override`](#cpuo) is
+`meson` will not search for a `$SYSTEM-$CPU` directory unless [`cpu_override`](#gp) is
 set in a cross-file.
 
 ### Special System Names
@@ -97,42 +97,39 @@ should be the actual system to target, and not `posix`. The build system
 will perform the conversion, so _all conversions should be handled in
 `meson.build`, not the cross-files_.
 
-## <a name="cf"></a>Cross Files
+## <a name="cf"></a>Targets
 The `targets` directory provides sample
 [cross files](http://mesonbuild.com/Cross-compilation.html#defining-the-environment)
-which can be used to build variants of `libmodem`. Not all of the provided
-files are guaranteed to work without modification. In particular, some
-cross compile targets may need to have special variables set under their
-cross-file's `[properties]` section (or on the [command-line](#cc)).
+which can be used to build variants of `libmodem`. Some cross compile targets
+may need to have [special variables](#gp) set under their cross-file's `[properties]`
+section or on the [command-line](#build-opts).
 
 The cross files provided cannot encompass all systems where `libmodem`
 can theoretically run. However, they provide a base such that adding
 a new system requires minimal effort.
 
-### Global Properties
-Global properties cannot be overridden from the `meson` command-line.
+### <a name="gp"></a>Global Properties
+Global properties are custom properties in the `[properties]` section
+of the cross-file that customize how a libmodem port should be built. They
+are distinguished from user-settable options in that they modify the standard
+build process, and should not (and cannot) be changed from their specified value.
 
-#### <a name="cpuo"></a>`cpu_override`
-Most platform-specific code does not need a separate
+* `cpu_override`- Most platform-specific code does not need a separate
 directory for each CPU that platform supports, even during a
-cross-compile. Set this property to nonzero if a separate directory for
-each CPU is required.
-
+cross-compile. Set this property to nonzero if a separate directory (and
+therefore a different `src/serprim.h` implementation) for each CPU is required.
 _This property defaults to `false` if not set or if doing a native build._
 A platform where the compiler runs natively (and where `meson` runs) is
 assumed to export the same set of hardware interfaces regardless of
 architecture.
 
-### Targets With Special Properties
-Target properties can be overridden by using an appropriate `-D` flag as input
-to `meson`. See [Cross Files Section](#cf-port) of the Porting Guide.
-
-#### `hdmi2usb`
-
-* `hdmi2usb_dir`- Points to the litex build directory of the generated
-System-on-a-Chip. `software` and `gateware` should exist as subdirectories.
-_By default, this property is the empty string. A cross-build is likely to fail
-without modification._
+### <a name="build-opts"></a>Build Options
+[Build options](http://mesonbuild.com/Build-options.html) that will
+realistically change when `libmodem` is built on different machines (or even
+between builds!) can be overridden by using an appropriate `-D` flag as input
+to `meson`. For all possible options, see the `meson_options.txt`. Also see
+[Cross Compilation Options](#cc-opts) of the Porting Guide for how to add
+options. _Not all user-settable options are used for each port._
 
 # Porting Guide
 
@@ -151,41 +148,34 @@ If porting `libmodem` to a platform that `meson` already runs on, a cross-file
 needs to set `host_machine.system()` to use the name that `meson` would set
 for `build_machine.system()` during a native build on said platform (to ensure
 native and cross builds work the same way). Being a candidate for a native
-build, `meson.build` will not search for a `system-cpu` directory.
+build, `meson.build` will not search for a `$SYSTEM-$CPU` directory.
 
 On the other hand, if your port target is freestanding (no OS), or not capable
 of doing a native `meson` build, you have a choice in the name of `$PLATFORM`.
 Good candidates for a `system` name within the `[host_machine]` of a cross-file
 include:
 
+* Name of an OS, if `meson` can theoretically run on the target (`sortix`).
 * Name that encompasses an entire computer system, e.g. a programming
-environment and and PCB (such as `hdmi2usb`)
+environment and and PCB (such as `hdmi2usb`).
 * Name of a microcontroller family whose members all export an identical base
-set of peripherals (`msp430-uart`, `msp430-bitbang`)
+set of peripherals (`msp430-uart`, `msp430-bitbang`).
 
-### <a name="cf-port"></a>Cross-Files
-If you add a cross-file under `targets` that requires a new property to build, my
-suggestion is to comment the property out, say `my_var`, with the default
-value in the cross-file, like this:
+### <a name="cc-opts"></a>Cross Compilation Options
+If you add a cross-file under `targets` that requires user-defined settings
+to build, my suggestion is to add a variable to the `meson_options.txt` file
+at the source root, like this:
 
 ```
-[properties]
-# my_var = ''
+option('my_var', type : 'string', description : 'My Variable')
 ```
 
 In `meson.build`, you should add a line under `# Platform-specific Build Helpers`
 that looks like the following:
 
 ```
-cdata = configuration_data()
-my_var = meson.get_cross_property('my_var', cdata.get('my_var', ''))
+my_var = get_option('my_var')
 ```
-
-This allows a user to copy the cross-file to a new location if they need a
-persistent cross-build, while giving users the option to override options
-on the command line without needing to modify (and possibly accidentally commit)
-a cross-file tailored to a single build configuration.
-
 
 ## Porting A New Toolchain
 To Be Written

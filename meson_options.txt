@@ -1,0 +1,2 @@
+option('hdmi2usb_dir', type : 'string',
+    description : 'HDMI2USB only. Points to the Litex build directory of the generated System-on-a-Chip. "software" and "gateware" should exist as subdirectories.')

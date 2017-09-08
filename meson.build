@@ -3,11 +3,13 @@ cdata = configuration_data()
 
 # Set cross-file [property] vars to defaults if not set in cross-file or
 # command-line. Command-line overrides [property], cross-file overrides
-# default.
-cpu_override = meson.get_cross_property('cpu_override', cdata.get('cpu_override', false))
+# default (if can be overridden)
+cpu_override = meson.get_cross_property('cpu_override', false)
 
 
-# Determine platform portion of canonical name
+# Determine platform portion of canonical name- this cannot be a cross-file
+# property because even native builds may need to have the platform override
+# (no cross-file for native build)
 # POSIX handled specially
 posix = ['linux', 'bsd', 'darwin']
 posix_match = false
@@ -17,7 +19,7 @@ foreach p : posix
     endif
 endforeach
 
-if not (posix_match)
+if posix_match
     platform = 'posix'
 else
     platform = host_machine.system()
@@ -27,9 +29,9 @@ endif
 # Platform-specific Build Helpers
 pd_src = []
 if platform == 'hdmi2usb'
-    hdmiusb_dir = meson.get_cross_property('hdmi2usb_dir', cdata.get('hdmi2usb_dir', ''))
+    hdmi2usb_dir = get_option('hdmi2usb_dir')
     c_flags = run_command(join_paths(meson.source_root(), 'scripts', 'misoc-config.py'),
-                          hdmi2usb_dir), '--cflags')
+                          hdmi2usb_dir, '--cflags')
     if c_flags.returncode() == 0
         add_project_arguments(c_flags.stdout().strip().split(), language : 'c')
     else
