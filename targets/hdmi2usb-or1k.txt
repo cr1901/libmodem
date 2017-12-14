@@ -1,0 +1,11 @@
+[binaries]
+c = 'or1k-elf-gcc'
+ar = 'or1k-elf-ar'
+
+[properties]
+
+[host_machine]
+system = ''
+cpu_family = 'lm32'
+cpu = ''
+endian = 'big'
