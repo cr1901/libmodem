@@ -1,11 +1,10 @@
 [binaries]
 c = 'or1k-elf-gcc'
 ar = 'or1k-elf-ar'
-
-[properties]
+strip = 'or1k-elf-strip'
 
 [host_machine]
-system = ''
-cpu_family = 'lm32'
-cpu = ''
+system = 'hdmi2usb'
+cpu = 'or1k'
+cpu_family = 'or1k'
 endian = 'big'
